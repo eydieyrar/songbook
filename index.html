@@ -32,8 +32,8 @@ button,input,textarea{font:inherit;color:inherit}
 .pill.round svg{display:block}
 .navt{flex:1;text-align:center;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
-.srch{display:flex;align-items:center;height:40px;border-radius:999px;padding:0 14px;gap:8px;margin-bottom:14px}
-.srch input{flex:1;border:0;background:none;outline:0;font-size:16px;min-width:0}
+.srch{display:flex;align-items:center;height:52px;border-radius:999px;padding:0 18px;gap:10px;margin-bottom:14px;cursor:text}
+.srch input{flex:1;border:0;background:none;outline:0;font-size:17px;min-width:0;height:100%}
 .grp{background:var(--card);border-radius:20px;overflow:hidden;margin:0 0 18px}
 .row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;min-height:58px}
 .row:last-child{border-bottom:0}
@@ -63,7 +63,8 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .sbtn{border:0;background:var(--field);font-size:14px;font-weight:600;padding:9px 14px;border-radius:999px;text-decoration:none;display:inline-block}
 .sbtn.pri{background:var(--ac);color:#fff}
 .sbtn.red{color:#ff453a}
-.menu{margin:0 14px 10px;border-radius:16px;overflow:hidden;font-size:14px;animation:pop .18s ease-out;transform-origin:top left}
+.menu{margin:0 14px 10px;border-radius:16px;overflow:hidden;font-size:14px;transform-origin:top left}
+.menu.in{animation:pop .18s ease-out}
 .menu a{display:flex;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
 .menu a:last-child{border-bottom:0}
 .ln{background:var(--card);border-radius:18px;margin-bottom:10px;overflow:hidden}
@@ -112,7 +113,8 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .grpbar{display:flex;align-items:center;border-radius:999px;height:44px;padding:0 4px}
 .grpbar button{border:0;background:none;color:#fff;font-size:15px;font-weight:600;height:36px;padding:0 13px;border-radius:999px;display:flex;align-items:center;justify-content:center}
 .grpbar .sepv{width:1px;height:18px;background:rgba(255,255,255,.3)}
-.vmenu{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 62px);z-index:40;width:240px;border-radius:22px;padding:6px;color:#fff;animation:pop .18s ease-out;transform-origin:top right}
+.vmenu{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 62px);z-index:40;width:240px;border-radius:22px;padding:6px;color:#fff;transform-origin:top right}
+.vmenu.in{animation:pop .18s ease-out}
 .vmenu div{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-size:16px;border-radius:16px;cursor:pointer}
 .vmenu div+div{border-top:1px solid rgba(255,255,255,.14)}
 .vmenu .ck{width:20px;text-align:right;font-weight:700}
@@ -125,9 +127,11 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 @keyframes sheetin{from{transform:translateY(120%);opacity:0}}
 @keyframes sheetout{to{transform:translateY(120%);opacity:0}}
 .vmenu.out,.menu.out{animation:popout .16s ease-in forwards}
-.scrim{position:absolute;inset:0;z-index:45;background:rgba(0,0,0,.35);animation:fadein .22s ease-out}
+.scrim{position:absolute;inset:0;z-index:45;background:rgba(0,0,0,.35)}
+.scrim.in{animation:fadein .22s ease-out}
 .scrim.out{animation:fadeout .16s ease-in forwards}
-.sheet{position:absolute;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:50;border-radius:30px;padding:8px;display:flex;flex-direction:column;gap:6px;animation:sheetin .3s cubic-bezier(.2,.8,.2,1)}
+.sheet{position:absolute;left:10px;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);z-index:50;border-radius:30px;padding:8px;display:flex;flex-direction:column;gap:6px}
+.sheet.in{animation:sheetin .3s cubic-bezier(.2,.8,.2,1)}
 .sheet.out{animation:sheetout .2s ease-in forwards}
 .sheet button{border:0;font-size:17px;font-weight:600;padding:15px;border-radius:24px;background:var(--glassb)}
 .sheet button.red{color:#ff453a}
@@ -155,11 +159,19 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = 'v5';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.1';
+var CHANGES = [
+  { v: '1.0.1', d: '18 Nov 2026', t: 'Polish', s: 'Smaller fixes to icons, menus and search after the redesign.', n: ['Real gear icon for Settings', 'Rounder eye icon', 'Language menu stays still when you toggle', 'Bigger search bar tap area', 'Version page with change notes'] },
+  { v: '1.0.0', d: '18 Nov 2026', t: 'The iOS redesign', s: 'A new native iOS look, a safer way to add songs, and tools for lining up lyrics.', n: ['Glass tab bar, swipe back, Light / Dark / System', 'Save button for new songs, Discard prompt', 'Cover search, three paste fields, alignment card', 'Move or clear each language row separately', 'Hidden languages stay hidden, hold to peek'] },
+  { v: '0.4', d: 'Nov 2026', t: 'No pinch zoom', s: 'The app no longer zooms when you pinch or double-tap.', n: ['Pinch-zoom blocked'] },
+  { v: '0.3', d: 'Nov 2026', t: 'Sync', s: 'Songs are saved to your private GitHub repo so your devices share them.', n: ['Sync with a private GitHub repo', 'Choose-version screen for conflicts'] },
+  { v: '0.2', d: 'Nov 2026', t: 'Lyrics view', s: 'Songs open as scrolling lyrics in the Apple Music style.', n: ['Apple Music style lyrics view', 'Hide a language to study'] },
+  { v: '0.1', d: 'Nov 2026', t: 'First version', s: 'The first working app: add songs, read them, back them up.', n: ['Songs, backup and restore', 'Paper layout'] }
+];
 var db = null, status = '';
 var tab = 'songs', stacks = { songs: [{ p: 'list' }], add: [{ p: 'form' }] };
 var draft = null, pasteBuf = { jp: '', ro: '', en: '' }, covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
-var pushing = false, freshScroll = true;
+var pushing = false, freshScroll = true, an = { v: 0, m: 0, s: 0 };
 var KS = [0.85, 1, 1.15, 1.3], KN = ['Small', 'Default', 'Large', 'Extra large'], KL = ['S', 'M', 'L', 'XL'];
 var app = document.getElementById('app');
 
@@ -388,8 +400,8 @@ function covH(s, big) {
 }
 function nonBlank(s, k) { var n = 0; s.lines.forEach(function (l) { if (String(l[k]).replace(/\s/g, '')) n++; }); return n; }
 var BACK = '<svg width="10" height="17" viewBox="0 0 10 17"><path d="M8.4 1.4 L1.5 8.5 L8.4 15.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-var GEAR = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg>';
-var EYE = '<svg width="22" height="16" viewBox="0 0 22 16"><path d="M1 8 C4 2.5 18 2.5 21 8 C18 13.5 4 13.5 1 8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="11" cy="8" r="3" fill="currentColor"/></svg>';
+var GEAR = '<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+var EYE = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12C4.8 7.6 8.2 5.4 12 5.4S19.2 7.6 21.4 12C19.2 16.4 15.8 18.6 12 18.6S4.8 16.4 2.6 12Z"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>';
 function backBtn() { return '<button class="pill round glass" data-act="back" aria-label="Back">' + BACK + '</button>'; }
 function navBar(l, mid, r) { return '<div class="nav">' + l + '<div class="navt">' + (mid || '') + '</div>' + r + '</div>'; }
 function searchLinks(s, k) {
@@ -401,7 +413,7 @@ function searchLinks(s, k) {
 /* ---------- pages ---------- */
 function listP() {
   var h = navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
-    '<div class="body"><h1 class="lg">Songs</h1><div class="srch glass"><span style="color:var(--mu)">⌕</span><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"></div>';
+    '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"></label>';
   var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist).toLowerCase().indexOf(q) >= 0; });
   if (!db.songs.length) h += '<div class="grp"><div class="empty">No songs yet. Tap Add below to create your first song.</div></div>';
   else {
@@ -434,7 +446,7 @@ function readerP(p) {
   if (!s.lines.length) h += '<div class="anote">No lyrics yet. Tap Edit to add some.</div>';
   if (s.notes) h += '<div class="anote">' + esc(s.notes) + '</div>';
   h += '</div>';
-  if (vmenu) h += '<div class="mscrim" data-act="vclose"></div><div class="vmenu glass">' + ['ro', 'jp', 'en'].map(function (k) {
+  if (vmenu) h += '<div class="mscrim" data-act="vclose"></div><div class="vmenu glass' + (an.v ? ' in' : '') + '">' + ['ro', 'jp', 'en'].map(function (k) {
     return '<div data-act="hide" data-k="' + k + '"><span>' + ({ ro: 'Romaji', jp: '日本語 (Japanese)', en: 'English' })[k] + '</span><span class="ck">' + (hide[k] ? '' : '✓') + '</span></div>';
   }).join('') + '</div>';
   return h + '</div>';
@@ -472,7 +484,7 @@ function formP() {
     h += '<div class="grp"><div class="fld"><label>' + r[1] + ' lyrics (paste here)</label><textarea data-p="' + k + '" placeholder="Paste ' + r[1].toLowerCase() + ' lyrics, one line per line">' + esc(pasteBuf[k]) + '</textarea></div>' +
       '<div class="fld"><label>Source link (optional, for your reference)</label><input data-s="' + k + '" value="' + esc(s.src[k]) + '" placeholder="https://…" autocapitalize="none" autocorrect="off"></div>' +
       '<div class="btnrow"><button class="sbtn" data-act="menu" data-k="' + k + '">Search for ' + r[1] + ' ▾</button></div>' +
-      (menuOpen === k ? '<div class="menu glass">' + searchLinks(s, k).map(function (l) { return '<a href="' + l[1] + '" target="_blank" rel="noopener">' + l[0] + '<span>↗</span></a>'; }).join('') + '</div>' : '') + '</div>';
+      (menuOpen === k ? '<div class="menu glass' + (an.m ? ' in' : '') + '">' + searchLinks(s, k).map(function (l) { return '<a href="' + l[1] + '" target="_blank" rel="noopener">' + l[0] + '<span>↗</span></a>'; }).join('') + '</div>' : '') + '</div>';
   });
   h += '<div id="align">' + alignH(s) + '</div><div class="sec">Lines</div>';
   s.lines.forEach(function (l, i) {
@@ -490,7 +502,7 @@ function setP() {
     '<div class="grp"><div class="fld"><div style="font-weight:800;font-size:' + (22 * KS[db.ui.sz]) + 'px;line-height:1.3">夜明けの電車</div><label style="margin:4px 0 0">' + KN[db.ui.sz] + '</label></div></div>' +
     '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small><span class="chev">›</span></div>' +
     '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div><span class="chev">›</span></div></div>' +
-    '<div class="sec">About</div><div class="grp"><div class="row" style="cursor:default"><div class="sp"><b>Version</b></div><small>' + VER + '</small></div></div></div>';
+    '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small><span class="chev">›</span></div></div></div>';
 }
 function syncP() {
   var c = cfg || { owner: '', repo: 'songbook-data', token: '' };
@@ -514,8 +526,13 @@ function conflictP() {
     '<div class="grp"><div class="fld"><label>Mine (this device)</label>' + songInfo(s) + '</div><div class="fld"><label>Theirs (on GitHub)</label>' + songInfo(t) + '</div></div>' +
     '<div class="btnrow" style="padding:0"><button class="sbtn pri" data-act="keepmine">Keep mine</button><button class="sbtn" data-act="keeptheirs">Keep theirs</button><button class="sbtn" data-act="keepboth">Keep both</button></div></div>';
 }
+function verP() {
+  return navBar(backBtn(), 'Version', '<span></span>') + '<div class="body"><h1 class="lg" style="margin-top:24px">What\'s new</h1>' + CHANGES.map(function (c, i) {
+    return '<div class="sec">' + c.v + (i === 0 ? ' · current' : '') + ' · ' + c.d + '</div><div class="grp"><div class="fld"><b style="font-size:17px">' + esc(c.t) + '</b><div style="color:var(--mu);font-size:14px;line-height:1.4;margin-top:3px">' + esc(c.s) + '</div></div>' + c.n.map(function (x) { return '<div class="fld" style="font-size:14px">• ' + esc(x) + '</div>'; }).join('') + '</div>';
+  }).join('') + '</div>';
+}
 function pageHTML(p) {
-  return p.p === 'list' ? listP() : p.p === 'read' ? readerP(p) : (p.p === 'edit' || p.p === 'form') ? formP() : p.p === 'set' ? setP() : p.p === 'sync' ? syncP() : p.p === 'backup' ? backupP() : conflictP();
+  return p.p === 'ver' ? verP() : p.p === 'list' ? listP() : p.p === 'read' ? readerP(p) : (p.p === 'edit' || p.p === 'form') ? formP() : p.p === 'set' ? setP() : p.p === 'sync' ? syncP() : p.p === 'backup' ? backupP() : conflictP();
 }
 
 /* ---------- render ---------- */
@@ -541,9 +558,9 @@ function render(keep) {
   });
   if (st.length === 1) h += '<div class="tabs glass">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (t) { return '<div class="tab' + (tab === t[0] ? ' on' : '') + '" data-act="tab" data-k="' + t[0] + '"><span>' + t[1] + '</span>' + t[2] + '</div>'; }).join('') + '</div>';
   else h += '<div class="edge" id="edge"></div>';
-  if (sheet) h += '<div class="scrim" data-act="keep"></div><div class="sheet glass"><button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button></div>';
+  if (sheet) h += '<div class="scrim' + (an.s ? ' in' : '') + '" data-act="keep"></div><div class="sheet glass' + (an.s ? ' in' : '') + '"><button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button></div>';
   app.innerHTML = h;
-  pushing = false;
+  pushing = false; an = { v: 0, m: 0, s: 0 };
   var nb = document.querySelector('.layer.topl .body');
   if (nb) nb.scrollTop = (keep && !freshScroll) ? top : 0;
   var sc = document.getElementById('sc');
@@ -633,12 +650,18 @@ document.addEventListener('click', function (e) {
     }
     return;
   }
-  if (act === 'hide') { db.ui.hide[k] = !db.ui.hide[k]; save(); render(true); return; }
-  if (act === 'vmenu') { if (vmenu) closeAnim('.vmenu,.mscrim', function () { vmenu = false; render(true); }); else { vmenu = true; render(true); } return; }
+  if (act === 'hide') {
+    db.ui.hide[k] = !db.ui.hide[k]; save();
+    var hs = document.querySelectorAll('.al .' + k), q;
+    for (q = 0; q < hs.length; q++) hs[q].classList.toggle('hid', !!db.ui.hide[k]);
+    var ck = document.querySelector('.vmenu [data-k="' + k + '"] .ck'); if (ck) ck.textContent = db.ui.hide[k] ? '' : '✓';
+    return;
+  }
+  if (act === 'vmenu') { if (vmenu) closeAnim('.vmenu,.mscrim', function () { vmenu = false; render(true); }); else { vmenu = true; an.v = 1; render(true); } return; }
   if (act === 'vclose') { closeAnim('.vmenu', function () { vmenu = false; render(true); }); return; }
   if (act === 'theme') { db.ui.theme = k; save(); applyTheme(); render(true); return; }
   if (act === 'size') { db.ui.sz = +k; save(); render(true); return; }
-  if (act === 'menu') { if (menuOpen === k) closeAnim('.menu', function () { menuOpen = null; render(true); }); else { menuOpen = k; render(true); } return; }
+  if (act === 'menu') { if (menuOpen === k) closeAnim('.menu', function () { menuOpen = null; render(true); }); else { menuOpen = k; an.m = 1; render(true); } return; }
   s = fs();
   if (act === 'covers') { if (s) findCovers(s); return; }
   if (act === 'cover') { if (s && covers[i]) { s.cover = covers[i].u; touch(s); if (s !== draft) save(); render(true); } return; }
@@ -674,7 +697,7 @@ document.addEventListener('click', function (e) {
     } else popAnim();
     return;
   }
-  if (act === 'cancel') { if (draftDirty()) { sheet = true; render(true); } else { tab = 'songs'; freshScroll = true; render(); } return; }
+  if (act === 'cancel') { if (draftDirty()) { sheet = true; an.s = 1; render(true); } else { tab = 'songs'; freshScroll = true; render(); } return; }
   if (act === 'keep') { closeAnim('.sheet,.scrim', function () { sheet = false; render(true); }); return; }
   if (act === 'discard') { closeAnim('.sheet,.scrim', function () { resetDraft(); tab = 'songs'; freshScroll = true; render(); }); return; }
   if (act === 'del') {
