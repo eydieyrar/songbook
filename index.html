@@ -14,6 +14,7 @@
 *{box-sizing:border-box}
 html,body{margin:0;background:#faf3e0;color:#28241e;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
 body{padding:env(safe-area-inset-top) 12px 40px}
+body.rd{overflow:hidden;padding:0}
 h1{font-size:20px;margin:14px 0}
 button{font:inherit;padding:8px 12px;border:1px solid #b9a97d;background:#fff8e6;border-radius:8px;color:inherit}
 button.pri{background:#28241e;color:#fff;border-color:#28241e}
@@ -33,22 +34,45 @@ label{display:block;font-size:13px;color:#6b5f42;margin:8px 0 3px}
 .ln .tools{display:flex;gap:6px}
 .ln .tools button{padding:4px 10px}
 .err{background:#fde8e8;border:1px solid #d99;padding:8px;border-radius:8px;margin:8px 0;font-size:14px}
-/* pages */
-.spread{display:flex;gap:10px;margin:12px 0;align-items:flex-start}
-.slot{flex:1;min-width:0}
-.page{aspect-ratio:33/48;container-type:inline-size;background:#fffdf6;border:1px solid #cfc29a;box-shadow:0 1px 4px rgba(0,0,0,.12);overflow:hidden}
-.in{--u:calc(100cqw/33);width:100%;height:100%;padding:0 calc(var(--u)*.0)}
-.grid .in{background-image:linear-gradient(#e6dcb8 1px,transparent 1px),linear-gradient(90deg,#e6dcb8 1px,transparent 1px);background-size:var(--u) var(--u)}
-.r{display:block;width:100%;white-space:nowrap;overflow:hidden;line-height:1;padding-left:calc(var(--u)*.3);--s:1}
-.b1{height:var(--u)}.b2{height:calc(var(--u)*2)}
-.ro,.en,.tr,.ar{height:var(--u);font-size:calc(var(--u)*.62*var(--s));line-height:var(--u)}
-.jp,.tj{height:calc(var(--u)*2);font-size:calc(var(--u)*1.3*var(--s));line-height:calc(var(--u)*2)}
-.ro,.tr{color:#6b5f42}
-.ar{color:#4a4233}
-.hid{color:transparent!important;background:#efe6c8}
-.rev{color:inherit!important;background:none}
-.notes{padding:calc(var(--u)*.6);white-space:pre-wrap;font-size:calc(var(--u)*.7);line-height:1.5;display:block}
-.pn{text-align:center;font-size:12px;color:#8a7d5c}
+/* lyrics view (Apple Music style) */
+.am{position:fixed;left:0;right:0;top:0;bottom:0;z-index:10;background:var(--bg);color:#fff;overflow:hidden}
+.am .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.7;pointer-events:none}
+.am button{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:18px;padding:8px 14px}
+.am button.on{background:#fff;color:#111}
+.amtop{position:absolute;left:0;right:0;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top) + 10px) 16px 24px;background:linear-gradient(var(--bg) 55%,transparent)}
+.amt{flex:1;min-width:0}
+.amt b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.amt small{opacity:.7;font-size:13px}
+.cover{display:none}
+.ly{position:absolute;left:0;right:0;top:0;bottom:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(env(safe-area-inset-top) + 86px) 22px 480px}
+.ly::-webkit-scrollbar{display:none}
+.al{cursor:pointer;opacity:.32;filter:blur(1.3px);transition:opacity .35s,filter .35s,transform .35s;transform-origin:left center;margin-bottom:26px}
+.al.act{opacity:1;filter:none;transform:scale(1.03)}
+.al .jp{font-weight:800;line-height:1.28;margin:3px 0;font-size:calc(var(--k)*27px)}
+.al .ro{display:block;opacity:.7;font-size:calc(var(--k)*12.5px)}
+.al .en{display:block;opacity:.75;font-size:calc(var(--k)*14px)}
+.al .nt{display:none;margin-top:6px;padding-left:8px;border-left:3px solid #f5c542;font-size:13px;opacity:.9}
+.al.act .nt{display:block}
+.hid{color:transparent!important;background:rgba(255,255,255,.2);border-radius:6px}
+.anote{margin-top:30px;padding:14px;border-radius:14px;background:rgba(255,255,255,.1);white-space:pre-wrap;font-size:14px;line-height:1.5}
+.pill{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom) + 14px);z-index:6;display:flex;gap:6px;padding:6px;border-radius:26px;background:rgba(0,0,0,.45);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);max-width:96%}
+.pill button{padding:8px 12px;white-space:nowrap}
+@media (min-width:600px){
+  .ly{padding:calc(env(safe-area-inset-top) + 110px) 56px 700px}
+  .al{margin-bottom:36px}
+  .al .jp{font-size:calc(var(--k)*40px)}.al .ro{font-size:calc(var(--k)*16px)}.al .en{font-size:calc(var(--k)*19px)}
+  .amt b{font-size:19px}
+}
+@media (min-width:900px) and (orientation:landscape){
+  .ly{padding:calc(env(safe-area-inset-top) + 64px) 56px 400px 400px}
+  .al{margin-bottom:34px}
+  .al .jp{font-size:calc(var(--k)*38px)}.al .ro{font-size:calc(var(--k)*15px)}.al .en{font-size:calc(var(--k)*18px)}
+  .amt{visibility:hidden}
+  .cover{display:block;position:absolute;left:44px;top:calc(env(safe-area-inset-top) + 80px);width:300px;z-index:4}
+  .cover .art{width:300px;height:300px;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:130px;font-weight:900}
+  .cover .ct{font-size:22px;font-weight:700;margin-top:22px}
+  .cover .ca{opacity:.7;margin-top:4px}
+}
 </style>
 </head>
 <body>
@@ -57,7 +81,7 @@ label{display:block;font-size:13px;color:#6b5f42;margin:8px 0 3px}
 (function () {
 'use strict';
 var LSKEY = 'songbook.v1';
-var db = null, view = 'list', cur = null, status = '';
+var db = null, view = 'list', cur = null, status = '', curLine = 0;
 var app = document.getElementById('app');
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
@@ -66,7 +90,7 @@ function blank() { return { id: uid(), title: { jp: '', ro: '', en: '' }, artist
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
   d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {};
-  d.ui.grid = !!d.ui.grid;
+  d.ui.size = +d.ui.size || 1;
   d.songs.forEach(function (s) {
     s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
     s.artist = s.artist || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
@@ -78,7 +102,7 @@ function sample() {
   s.title = { jp: 'サンプル', ro: 'Sanpuru', en: 'Sample' };
   s.artist = 'Example Artist';
   s.lines = [{ ro: 'romaji line here', jp: '日本語の行', en: 'English line here', note: '' }];
-  return { songs: [s], ui: { grid: true, hide: {} }, savedAt: 0 };
+  return { songs: [s], ui: { size: 1, hide: {} }, savedAt: 0 };
 }
 
 /* ---------- storage ---------- */
@@ -143,42 +167,39 @@ function boot() {
   });
 }
 
-/* ---------- pagination ---------- */
-function song() { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === cur) return db.songs[i]; return null; }
-function pages(s) {
-  var out = [], L = s.lines, i = 0;
-  out.push({ first: true, lines: L.slice(0, 8) }); i = 8;
-  while (i < L.length) { out.push({ first: false, lines: L.slice(i, i + 9) }); i += 9; }
-  return out;
-}
-function row(cls, txt, k) {
-  var hide = k && db.ui.hide[k] ? ' hid' : '';
-  return '<span class="r ' + cls + hide + '"' + (k ? ' data-k="' + k + '"' : '') + '>' + esc(txt) + '</span>';
-}
-function pageHTML(s, p) {
-  var h = '<div class="page' + (db.ui.grid ? ' grid' : '') + '"><div class="in">';
-  if (p.first) {
-    h += row('b1', '') + row('tj', s.title.jp) + row('tr', s.title.ro) + row('en', s.title.en) + row('b1', '') + row('ar', s.artist) + row('b1', '');
-  } else h += row('b2', '');
-  p.lines.forEach(function (l, i) {
-    h += row('ro', l.ro, 'ro') + row('jp', l.jp, 'jp') + row('en', l.en, 'en');
-    if (p.first || i < p.lines.length - 1) h += row('b1', '');
-  });
-  return h + '</div></div>';
-}
-function notesHTML(s) {
-  return '<div class="page' + (db.ui.grid ? ' grid' : '') + '"><div class="in"><span class="notes">' + esc(s.notes || '(notes)') + '</span></div></div>';
-}
-
 /* ---------- views ---------- */
-function render() {
+function song() { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === cur) return db.songs[i]; return null; }
+function hue(s) {
+  var t = s.title.jp || s.title.en || s.id, h = 0, i;
+  for (i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 360;
+  return h;
+}
+function centre(smooth) {
+  var sc = document.getElementById('sc'), a = sc && sc.querySelector('.al.act');
+  if (!a) return;
+  var t = a.offsetTop - sc.clientHeight * 0.33;
+  if (smooth && sc.scrollTo) { try { sc.scrollTo({ top: t, behavior: 'smooth' }); return; } catch (e) {} }
+  sc.scrollTop = t;
+}
+function setAct(i) {
+  curLine = i;
+  var ls = document.querySelectorAll('.al'), j;
+  for (j = 0; j < ls.length; j++) { if (j === i) ls[j].classList.add('act'); else ls[j].classList.remove('act'); }
+  centre(true);
+}
+function render(keep) {
+  var old = document.getElementById('sc'), top = old ? old.scrollTop : 0;
   var h = '<div id="status" class="err" style="display:' + (status ? 'block' : 'none') + '">' + esc(status) + '</div>';
   if (view === 'list') h += listV();
   else if (view === 'read') h += readV();
   else if (view === 'edit') h += editV();
   else h += backupV();
   app.innerHTML = h;
-  if (view === 'read') fit();
+  document.body.className = view === 'read' ? 'rd' : '';
+  if (view === 'read') {
+    var sc = document.getElementById('sc');
+    if (sc) { if (keep) sc.scrollTop = top; else centre(false); }
+  }
 }
 function listV() {
   var h = '<h1>Song Notebook</h1><div class="bar"><button class="pri" data-act="new">+ New song</button><span class="sp"></span><button data-act="backup">Backup</button></div><div class="card" style="padding:0">';
@@ -191,20 +212,27 @@ function listV() {
 }
 function readV() {
   var s = song(); if (!s) { view = 'list'; return listV(); }
-  var h = '<div class="bar"><button data-act="list">‹ Songs</button><button data-act="edit" data-id="' + s.id + '">Edit</button><span class="sp"></span>' +
-    '<label class="chk"><input type="checkbox" data-grid' + (db.ui.grid ? ' checked' : '') + '>Grid</label></div>' +
-    '<div class="bar">Study: ' + ['ro', 'jp', 'en'].map(function (k) {
-      return '<label class="chk"><input type="checkbox" data-hide="' + k + '"' + (db.ui.hide[k] ? ' checked' : '') + '>hide ' + ({ ro: 'romaji', jp: 'Japanese', en: 'English' })[k] + '</label>';
-    }).join('') + '</div>';
-  var ps = pages(s), n = ps.length, i;
-  var slots = ps.map(function (p) { return pageHTML(s, p); });
-  var extra = '';
-  if (n % 2 === 1) slots.push(notesHTML(s));
-  else if (s.notes) extra = '<div class="card"><b>Notes</b><div style="white-space:pre-wrap">' + esc(s.notes) + '</div></div>';
-  for (i = 0; i < slots.length; i += 2) {
-    h += '<div class="spread"><div class="slot">' + slots[i] + '<div class="pn">' + (i + 1) + '</div></div><div class="slot">' + (slots[i + 1] || '') + '<div class="pn">' + (slots[i + 1] ? i + 2 : '') + '</div></div></div>';
-  }
-  return h + extra;
+  if (curLine >= s.lines.length) curLine = 0;
+  var h1 = hue(s), h2 = (h1 + 140) % 360, name = s.title.jp || s.title.en || '(untitled)', hide = db.ui.hide;
+  var h = '<div class="am" style="--bg:hsl(' + h1 + ',45%,9%);--k:' + db.ui.size + '">' +
+    '<i class="blob" style="width:420px;height:420px;background:hsl(' + h1 + ',85%,58%);left:-120px;top:-80px"></i>' +
+    '<i class="blob" style="width:480px;height:480px;background:hsl(' + h2 + ',75%,55%);right:-160px;bottom:-120px"></i>' +
+    '<div class="amtop"><button data-act="list">‹ Songs</button><div class="amt"><b>' + esc(name) + '</b><small>' + esc(s.artist) + '</small></div><button data-act="edit" data-id="' + s.id + '">Edit</button></div>' +
+    '<div class="cover"><div class="art" style="background:linear-gradient(135deg,hsl(' + h1 + ',85%,58%),hsl(' + h2 + ',75%,45%))">歌</div><div class="ct">' + esc(name) + '</div><div class="ca">' + esc(s.artist) + '</div></div>' +
+    '<div class="ly" id="sc">';
+  s.lines.forEach(function (l, i) {
+    h += '<div class="al' + (i === curLine ? ' act' : '') + '" data-i="' + i + '">' +
+      (l.ro ? '<span class="ro' + (hide.ro ? ' hid' : '') + '">' + esc(l.ro) + '</span>' : '') +
+      '<div class="jp' + (hide.jp ? ' hid' : '') + '">' + esc(l.jp) + '</div>' +
+      (l.en ? '<span class="en' + (hide.en ? ' hid' : '') + '">' + esc(l.en) + '</span>' : '') +
+      (l.note ? '<div class="nt">' + esc(l.note) + '</div>' : '') + '</div>';
+  });
+  if (s.notes) h += '<div class="anote">' + esc(s.notes) + '</div>';
+  h += '</div><div class="pill"><button data-act="sz-">A−</button><button data-act="sz+">A+</button>' +
+    ['ro', 'jp', 'en'].map(function (k) {
+      return '<button data-act="hide" data-k="' + k + '"' + (hide[k] ? '' : ' class="on"') + '>' + ({ ro: 'Romaji', jp: '日本語', en: 'English' })[k] + '</button>';
+    }).join('') + '</div></div>';
+  return h;
 }
 function editV() {
   var s = song(); if (!s) { view = 'list'; return listV(); }
@@ -213,14 +241,14 @@ function editV() {
     '<label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '">' +
     '<label>Title (English)</label><input data-f="title.en" value="' + esc(s.title.en) + '">' +
     '<label>Artist (e.g. 米津玄師 (Kenshi Yonezu))</label><input data-f="artist" value="' + esc(s.artist) + '">' +
-    '<label>Notes (right-hand page)</label><textarea data-f="notes">' + esc(s.notes) + '</textarea></div>' +
+    '<label>Notes (shown at the end of the song)</label><textarea data-f="notes">' + esc(s.notes) + '</textarea></div>' +
     '<div class="card"><label>Paste lyrics here, then split into lines</label><textarea id="paste"></textarea>' +
     '<div class="bar"><label class="chk"><input type="checkbox" id="dropsec" checked>Drop [Chorus] / 【サビ】 labels and (…) lines</label><button data-act="split">Split into lines</button></div></div>';
   s.lines.forEach(function (l, i) {
     h += '<div class="ln"><input data-k="ro" data-i="' + i + '" placeholder="romaji" value="' + esc(l.ro) + '">' +
       '<input data-k="jp" data-i="' + i + '" placeholder="日本語" value="' + esc(l.jp) + '">' +
       '<input data-k="en" data-i="' + i + '" placeholder="English" value="' + esc(l.en) + '">' +
-      '<input data-k="note" data-i="' + i + '" placeholder="note (not shown on page)" value="' + esc(l.note) + '">' +
+      '<input data-k="note" data-i="' + i + '" placeholder="note (shown under the line when it is current)" value="' + esc(l.note) + '">' +
       '<div class="tools"><button data-act="up" data-i="' + i + '">↑</button><button data-act="down" data-i="' + i + '">↓</button><button data-act="ins" data-i="' + i + '">+ below</button><button class="danger" data-act="rm" data-i="' + i + '">✕</button></div></div>';
   });
   return h;
@@ -230,17 +258,6 @@ function backupV() {
     '<textarea id="bk" style="min-height:240px">' + esc(JSON.stringify(db)) + '</textarea>' +
     '<div class="bar"><button data-act="copy">Copy</button><button data-act="dl">Download</button><button class="danger" data-act="restore">Restore from text</button></div></div>';
 }
-
-/* ---------- fit ---------- */
-function fit() {
-  var rows = app.querySelectorAll('.r');
-  for (var i = 0; i < rows.length; i++) {
-    var el = rows[i], s = 1;
-    el.style.setProperty('--s', 1);
-    while (el.scrollWidth > el.clientWidth + 1 && s > 0.4) { s -= 0.05; el.style.setProperty('--s', s); }
-  }
-}
-window.addEventListener('resize', function () { if (view === 'read') fit(); });
 
 /* ---------- editing helpers ---------- */
 function setPath(s, path, v) { var p = path.split('.'); if (p.length === 2) s[p[0]][p[1]] = v; else s[p[0]] = v; }
@@ -263,15 +280,25 @@ function download(name, text) {
 
 /* ---------- events ---------- */
 document.addEventListener('click', function (e) {
-  var t = e.target.closest ? e.target.closest('[data-act],.r[data-k]') : null;
+  var t = e.target.closest ? e.target.closest('[data-act],.al[data-i]') : null;
   if (!t) return;
   var act = t.getAttribute('data-act'), s = song(), i = +t.getAttribute('data-i'), id = t.getAttribute('data-id');
-  if (!act) { if (t.classList.contains('hid')) { t.classList.remove('hid'); t.classList.add('rev'); } return; }
+  if (!act) {
+    var hs = t.querySelectorAll('.hid'), q;
+    for (q = 0; q < hs.length; q++) hs[q].classList.remove('hid');
+    setAct(i);
+    return;
+  }
   if (act === 'new') { var n = blank(); db.songs.push(n); cur = n.id; save(); view = 'edit'; }
-  else if (act === 'open' || act === 'read') { cur = id || cur; view = 'read'; }
+  else if (act === 'open' || act === 'read') { cur = id || cur; curLine = 0; view = 'read'; }
   else if (act === 'edit') { cur = id || cur; view = 'edit'; }
   else if (act === 'list') { view = 'list'; }
   else if (act === 'backup') { view = 'backup'; }
+  else if (act === 'hide') { var k = t.getAttribute('data-k'); db.ui.hide[k] = !db.ui.hide[k]; save(); render(true); return; }
+  else if (act === 'sz-' || act === 'sz+') {
+    db.ui.size = Math.round(Math.max(0.75, Math.min(1.4, db.ui.size + (act === 'sz+' ? 0.1 : -0.1))) * 100) / 100;
+    save(); render(true); return;
+  }
   else if (act === 'del') {
     if (!confirm('Delete this song?')) return;
     db.songs = db.songs.filter(function (x) { return x.id !== cur; }); cur = null; save(); view = 'list';
@@ -305,11 +332,6 @@ document.addEventListener('input', function (e) {
   if (!s) return;
   if (t.hasAttribute('data-f')) { setPath(s, t.getAttribute('data-f'), t.value); save(); }
   else if (t.hasAttribute('data-k') && t.hasAttribute('data-i')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-k')] = t.value; save(); }
-});
-document.addEventListener('change', function (e) {
-  var t = e.target;
-  if (t.hasAttribute('data-hide')) { db.ui.hide[t.getAttribute('data-hide')] = t.checked; save(); render(); }
-  else if (t.hasAttribute('data-grid')) { db.ui.grid = t.checked; save(); render(); }
 });
 
 boot();
