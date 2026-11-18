@@ -1,4 +1,4 @@
-var VERSION = 'v2';
+var VERSION = 'v3';
 var CACHE = 'songbook-' + VERSION;
 var FILES = ['./', 'index.html', 'manifest.json', 'icon.png'];
 self.addEventListener('install', function (e) {
@@ -11,6 +11,7 @@ self.addEventListener('activate', function (e) {
 });
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(fetch(e.request).then(function (r) {
     var copy = r.clone();
     caches.open(CACHE).then(function (c) { c.put(e.request, copy); });

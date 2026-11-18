@@ -33,6 +33,8 @@ label{display:block;font-size:13px;color:#6b5f42;margin:8px 0 3px}
 .ln{display:grid;grid-template-columns:1fr;gap:4px;padding:8px 0;border-bottom:1px dashed #d8cba5}
 .ln .tools{display:flex;gap:6px}
 .ln .tools button{padding:4px 10px}
+.sync{font-size:13px;color:#6b5f42;margin:4px 0;min-height:1.2em}
+.sync.warn{color:#a00}
 .err{background:#fde8e8;border:1px solid #d99;padding:8px;border-radius:8px;margin:8px 0;font-size:14px}
 /* lyrics view (Apple Music style) */
 .am{position:fixed;left:0;right:0;top:0;bottom:0;z-index:10;background:var(--bg);color:#fff;overflow:hidden}
@@ -91,11 +93,15 @@ function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
   d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {};
   d.ui.size = +d.ui.size || 1;
-  d.songs.forEach(function (s) {
-    s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
-    s.artist = s.artist || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
-  });
+  d.deleted = Array.isArray(d.deleted) ? d.deleted : [];
+  d.songs.forEach(normSong);
   return d;
+}
+function normSong(s) {
+  s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
+  s.artist = s.artist || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
+  s.sha = s.sha || ''; s.dirty = !!s.dirty; s.updated = +s.updated || 0;
+  return s;
 }
 function sample() {
   var s = blank();
@@ -153,6 +159,7 @@ function boot() {
     db = pick || sample();
     if (!pick) save();
     render();
+    if (cfg) sync();
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
   }
   var timer = setTimeout(function () { finish(null); }, 2000);
@@ -166,6 +173,113 @@ function boot() {
     });
   });
 }
+
+/* ---------- sync (private GitHub repo, one file per song) ---------- */
+var SYNCKEY = 'songbook.sync';
+var cfg = loadCfg(), syncing = false, syncMsg = '', conf = {}, syncTimer = null;
+function loadCfg() {
+  try { var c = JSON.parse(localStorage.getItem(SYNCKEY) || 'null'); return c && c.token && c.owner && c.repo ? c : null; } catch (e) { return null; }
+}
+function enc(s) { return btoa(unescape(encodeURIComponent(s))); }
+function dec(b) { return decodeURIComponent(escape(atob(String(b).replace(/\s/g, '')))); }
+function api(method, path, body) {
+  var o = { method: method, cache: 'no-store', headers: { 'Authorization': 'Bearer ' + cfg.token, 'Accept': 'application/vnd.github+json' } };
+  if (body) { o.body = JSON.stringify(body); o.headers['Content-Type'] = 'application/json'; }
+  return fetch('https://api.github.com/repos/' + encodeURIComponent(cfg.owner) + '/' + encodeURIComponent(cfg.repo) + path, o).then(function (r) {
+    return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { status: r.status, json: j }; });
+  });
+}
+function pack(s) { return { id: s.id, title: s.title, artist: s.artist, notes: s.notes, lines: s.lines, updated: s.updated }; }
+function findSong(id) { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === id) return i; return -1; }
+function fetchSong(id) {
+  return api('GET', '/contents/songs/' + id + '.json').then(function (r) {
+    if (r.status !== 200 || !r.json || !r.json.content) throw { m: 'Could not read a song file (GitHub ' + r.status + ').' };
+    var s = JSON.parse(dec(r.json.content)); s.id = id; s.sha = r.json.sha; s.dirty = false;
+    return normSong(s);
+  });
+}
+function putSong(s, sha) {
+  var u = s.updated, body = { message: 'Update ' + (s.title.en || s.title.jp || s.id), content: enc(JSON.stringify(pack(s), null, 1)) };
+  if (sha) body.sha = sha;
+  return api('PUT', '/contents/songs/' + s.id + '.json', body).then(function (r) {
+    if (r.status === 200 || r.status === 201) { s.sha = r.json.content.sha; s.dirty = (s.updated !== u); return 'ok'; }
+    if (r.status === 409 || r.status === 422) return 'conflict';
+    throw { m: r.status === 401 || r.status === 403 ? 'Token rejected or expired. Make a new one and paste it in Sync settings.' : 'GitHub error ' + r.status + ' while saving.' };
+  });
+}
+function conflicts() { var n = 0, k; for (k in conf) if (conf.hasOwnProperty(k)) n++; return n; }
+function setSync(m) {
+  syncMsg = m;
+  var el = document.getElementById('syncmsg');
+  if (el) el.textContent = m;
+}
+function syncSoon() {
+  if (!cfg) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(function () { sync(); }, 4000);
+}
+function touch(s) { s.dirty = true; s.updated = Date.now(); syncSoon(); }
+function sync() {
+  if (!cfg || syncing || !db) return Promise.resolve();
+  syncing = true; setSync('Syncing…');
+  var changed = false, remote = {};
+  function chain(fns) { return fns.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); }
+  function dropTomb(id) { db.deleted = db.deleted.filter(function (d) { return d.id !== id; }); }
+  return api('GET', '').then(function (r) {
+    if (r.status === 401) throw { m: 'Token rejected or expired. Make a new one and paste it in Sync settings.' };
+    if (r.status !== 200) throw { m: 'Repo not found. Check the username and repo name in Sync settings.' };
+    return api('GET', '/contents/songs');
+  }).then(function (r) {
+    if (r.status === 200 && Array.isArray(r.json)) {
+      r.json.forEach(function (f) { var m = /^([A-Za-z0-9_-]+)\.json$/.exec(f.name || ''); if (m) remote[m[1]] = f.sha; });
+    } else if (r.status !== 404) throw { m: 'GitHub error ' + r.status + '.' };
+    var steps = [], ids = {}, k;
+    db.deleted.slice().forEach(function (d) {
+      steps.push(function () {
+        if (remote[d.id] && (!d.sha || remote[d.id] === d.sha)) {
+          return api('DELETE', '/contents/songs/' + d.id + '.json', { message: 'Delete song', sha: remote[d.id] }).then(function (x) {
+            if (x.status === 200) { delete remote[d.id]; dropTomb(d.id); } else dropTomb(d.id);
+          });
+        }
+        dropTomb(d.id);
+      });
+    });
+    db.songs.forEach(function (s) { ids[s.id] = 1; });
+    for (k in remote) if (remote.hasOwnProperty(k)) ids[k] = 1;
+    Object.keys(ids).forEach(function (id) {
+      steps.push(function () {
+        var i = findSong(id), s = i < 0 ? null : db.songs[i], rs = remote[id];
+        if (!s) {
+          if (!rs) return;
+          return fetchSong(id).then(function (n) { db.songs.push(n); changed = true; });
+        }
+        function afterPut(res) {
+          if (res === 'conflict') return fetchSong(id).then(function (n) { conf[id] = n; changed = true; });
+          delete conf[id]; changed = true;
+        }
+        if (!rs) {
+          if (s.dirty) { s.sha = ''; return putSong(s, '').then(afterPut); }
+          if (s.sha) { db.songs.splice(i, 1); changed = true; }
+          return;
+        }
+        if (rs === s.sha) { if (s.dirty) return putSong(s, rs).then(afterPut); return; }
+        if (!s.dirty) return fetchSong(id).then(function (n) { db.songs[findSong(id)] = n; delete conf[id]; changed = true; });
+        return fetchSong(id).then(function (n) { conf[id] = n; changed = true; });
+      });
+    });
+    return chain(steps);
+  }).then(function () {
+    save();
+    var c = conflicts(), d = new Date(), t = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
+    setSync((c ? c + (c > 1 ? ' songs need' : ' song needs') + ' your choice. ' : '') + 'Synced ' + t);
+    if (changed && view !== 'edit') render(view === 'read');
+  }).catch(function (e) {
+    setSync(e && e.m ? e.m : 'Offline. Changes are saved here and will sync later.');
+    if (view === 'list') render();
+  }).then(function () { syncing = false; });
+}
+document.addEventListener('visibilitychange', function () { if (!document.hidden && cfg) sync(); });
+window.addEventListener('online', function () { if (cfg) sync(); });
 
 /* ---------- views ---------- */
 function song() { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === cur) return db.songs[i]; return null; }
@@ -193,6 +307,8 @@ function render(keep) {
   if (view === 'list') h += listV();
   else if (view === 'read') h += readV();
   else if (view === 'edit') h += editV();
+  else if (view === 'settings') h += settingsV();
+  else if (view === 'conflict') h += conflictV();
   else h += backupV();
   app.innerHTML = h;
   document.body.className = view === 'read' ? 'rd' : '';
@@ -202,13 +318,36 @@ function render(keep) {
   }
 }
 function listV() {
-  var h = '<h1>Song Notebook</h1><div class="bar"><button class="pri" data-act="new">+ New song</button><span class="sp"></span><button data-act="backup">Backup</button></div><div class="card" style="padding:0">';
+  var h = '<h1>Song Notebook</h1><div class="bar"><button class="pri" data-act="new">+ New song</button><span class="sp"></span><button data-act="settings">Sync</button><button data-act="backup">Backup</button></div>' +
+    '<div class="sync' + (conflicts() ? ' warn' : '') + '" id="syncmsg">' + esc(syncMsg || (cfg ? '' : 'Sync is off. Songs stay on this device.')) + '</div><div class="card" style="padding:0">';
   if (!db.songs.length) h += '<div class="song">No songs yet.</div>';
   db.songs.forEach(function (s) {
-    h += '<div class="song"><div data-act="open" data-id="' + s.id + '" style="flex:1"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist) + ' · ' + s.lines.length + ' lines</small></div>' +
+    h += '<div class="song"><div data-act="open" data-id="' + s.id + '" style="flex:1"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist) + ' · ' + s.lines.length + ' lines' + (s.dirty && cfg ? ' · not synced yet' : '') + '</small></div>' +
+      (conf[s.id] ? '<button class="danger" data-act="conflict" data-id="' + s.id + '">Choose version</button> ' : '') +
       '<button data-act="edit" data-id="' + s.id + '">Edit</button></div>';
   });
   return h + '</div>';
+}
+function settingsV() {
+  var c = cfg || { owner: '', repo: 'songbook-data', token: '' };
+  return '<div class="bar"><button data-act="list">‹ Songs</button></div><div class="card"><b>Sync with GitHub</b>' +
+    '<p style="font-size:14px">Songs are saved to your private repo, one file per song, so your iPad, iPhone and PC share them. The token stays on this device only and is never part of a backup.</p>' +
+    '<label>GitHub username</label><input id="cfgOwner" autocapitalize="none" autocorrect="off" value="' + esc(c.owner) + '">' +
+    '<label>Private repo name</label><input id="cfgRepo" autocapitalize="none" autocorrect="off" value="' + esc(c.repo) + '">' +
+    '<label>Token (github_pat_…)' + (cfg ? ' – leave empty to keep the saved one' : '') + '</label><input id="cfgToken" type="password" autocapitalize="none" autocorrect="off" placeholder="' + (cfg ? '(saved)' : 'github_pat_…') + '">' +
+    '<div class="bar"><button class="pri" data-act="cfgsave">Save and sync</button>' + (cfg ? '<button data-act="syncnow">Sync now</button><span class="sp"></span><button class="danger" data-act="cfgclear">Turn off</button>' : '') + '</div>' +
+    '<div class="sync" id="syncmsg">' + esc(syncMsg) + '</div></div>';
+}
+function songInfo(s) {
+  return '<b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><br><small>' + s.lines.length + ' lines' + (s.updated ? ' · edited ' + new Date(s.updated).toLocaleString() : '') + '</small>';
+}
+function conflictV() {
+  var s = song(), t = s && conf[s.id];
+  if (!t) { view = 'list'; return listV(); }
+  return '<div class="bar"><button data-act="list">‹ Songs</button></div><div class="card"><b>Two versions of this song</b>' +
+    '<p style="font-size:14px">This song was changed on another device and also on this one. Choose what to keep.</p>' +
+    '<div class="card">Mine (this device)<br>' + songInfo(s) + '</div><div class="card">Theirs (on GitHub)<br>' + songInfo(t) + '</div>' +
+    '<div class="bar"><button class="pri" data-act="keepmine">Keep mine</button><button data-act="keeptheirs">Keep theirs</button><button data-act="keepboth">Keep both</button></div></div>';
 }
 function readV() {
   var s = song(); if (!s) { view = 'list'; return listV(); }
@@ -289,7 +428,29 @@ document.addEventListener('click', function (e) {
     setAct(i);
     return;
   }
-  if (act === 'new') { var n = blank(); db.songs.push(n); cur = n.id; save(); view = 'edit'; }
+  if (act === 'new') { var n = blank(); touch(n); db.songs.push(n); cur = n.id; save(); view = 'edit'; }
+  else if (act === 'settings') { view = 'settings'; }
+  else if (act === 'conflict') { cur = id; view = 'conflict'; }
+  else if (act === 'syncnow') { sync(); return; }
+  else if (act === 'cfgsave') {
+    var tok = document.getElementById('cfgToken').value.replace(/\s/g, '');
+    var nc = { owner: document.getElementById('cfgOwner').value.replace(/\s/g, ''), repo: document.getElementById('cfgRepo').value.replace(/\s/g, ''), token: tok || (cfg ? cfg.token : '') };
+    if (!nc.owner || !nc.repo || !nc.token) { setSync('Fill in the username, repo and token.'); return; }
+    try { localStorage.setItem(SYNCKEY, JSON.stringify(nc)); } catch (x) { setSync('Could not save settings on this device.'); return; }
+    cfg = nc; sync(); return;
+  }
+  else if (act === 'cfgclear') { try { localStorage.removeItem(SYNCKEY); } catch (x) {} cfg = null; syncMsg = ''; }
+  else if (act === 'keepmine' || act === 'keeptheirs' || act === 'keepboth') {
+    var th = conf[cur], ix = findSong(cur);
+    if (!th || ix < 0) { view = 'list'; render(); return; }
+    if (act === 'keepmine') { s.sha = th.sha; touch(s); }
+    else if (act === 'keeptheirs') { db.songs[ix] = th; }
+    else {
+      var cp = JSON.parse(JSON.stringify(s)); cp.id = uid(); cp.sha = ''; cp.title.jp = (cp.title.jp || cp.title.en) + ' (mine)'; touch(cp);
+      db.songs[ix] = th; db.songs.push(cp);
+    }
+    delete conf[cur]; save(); view = 'list'; sync();
+  }
   else if (act === 'open' || act === 'read') { cur = id || cur; curLine = 0; view = 'read'; }
   else if (act === 'edit') { cur = id || cur; view = 'edit'; }
   else if (act === 'list') { view = 'list'; }
@@ -301,18 +462,20 @@ document.addEventListener('click', function (e) {
   }
   else if (act === 'del') {
     if (!confirm('Delete this song?')) return;
-    db.songs = db.songs.filter(function (x) { return x.id !== cur; }); cur = null; save(); view = 'list';
+    if (s && s.sha) db.deleted.push({ id: s.id, sha: s.sha });
+    delete conf[cur];
+    db.songs = db.songs.filter(function (x) { return x.id !== cur; }); cur = null; save(); view = 'list'; syncSoon();
   }
   else if (act === 'split') {
     var txt = document.getElementById('paste').value, add = splitLines(txt, document.getElementById('dropsec').checked);
     if (!add.length) return;
     if (s.lines.length === 1 && !s.lines[0].jp && !s.lines[0].ro && !s.lines[0].en) s.lines = [];
-    s.lines = s.lines.concat(add); save();
+    s.lines = s.lines.concat(add); touch(s); save();
   }
-  else if (act === 'up' && i > 0) { var a = s.lines; a.splice(i - 1, 2, a[i], a[i - 1]); save(); }
-  else if (act === 'down' && i < s.lines.length - 1) { var b = s.lines; b.splice(i, 2, b[i + 1], b[i]); save(); }
-  else if (act === 'ins') { s.lines.splice(i + 1, 0, { ro: '', jp: '', en: '', note: '' }); save(); }
-  else if (act === 'rm') { s.lines.splice(i, 1); if (!s.lines.length) s.lines.push({ ro: '', jp: '', en: '', note: '' }); save(); }
+  else if (act === 'up' && i > 0) { var a = s.lines; a.splice(i - 1, 2, a[i], a[i - 1]); touch(s); save(); }
+  else if (act === 'down' && i < s.lines.length - 1) { var b = s.lines; b.splice(i, 2, b[i + 1], b[i]); touch(s); save(); }
+  else if (act === 'ins') { s.lines.splice(i + 1, 0, { ro: '', jp: '', en: '', note: '' }); touch(s); save(); }
+  else if (act === 'rm') { s.lines.splice(i, 1); if (!s.lines.length) s.lines.push({ ro: '', jp: '', en: '', note: '' }); touch(s); save(); }
   else if (act === 'copy') {
     var ta = document.getElementById('bk'); ta.select();
     try { navigator.clipboard.writeText(ta.value); } catch (x) { document.execCommand('copy'); }
@@ -323,15 +486,16 @@ document.addEventListener('click', function (e) {
     var d; try { d = norm(JSON.parse(document.getElementById('bk').value)); } catch (x) { d = null; }
     if (!d) { alert('That text is not a valid backup.'); return; }
     if (!confirm('Replace ALL songs with this backup?')) return;
-    db = d; save(); view = 'list';
+    d.songs.forEach(function (x) { if (!x.sha) x.dirty = true; });
+    db = d; conf = {}; save(); view = 'list'; syncSoon();
   }
   render();
 });
 document.addEventListener('input', function (e) {
   var t = e.target, s = song();
   if (!s) return;
-  if (t.hasAttribute('data-f')) { setPath(s, t.getAttribute('data-f'), t.value); save(); }
-  else if (t.hasAttribute('data-k') && t.hasAttribute('data-i')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-k')] = t.value; save(); }
+  if (t.hasAttribute('data-f')) { setPath(s, t.getAttribute('data-f'), t.value); touch(s); save(); }
+  else if (t.hasAttribute('data-k') && t.hasAttribute('data-i')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-k')] = t.value; touch(s); save(); }
 });
 
 boot();
