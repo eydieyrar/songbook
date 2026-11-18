@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Songbook">
@@ -12,6 +12,7 @@
 <title>Song Notebook</title>
 <style>
 *{box-sizing:border-box}
+html{touch-action:manipulation}
 html,body{margin:0;background:#faf3e0;color:#28241e;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
 body{padding:env(safe-area-inset-top) 12px 40px}
 body.rd{overflow:hidden;padding:0}
@@ -496,6 +497,11 @@ document.addEventListener('input', function (e) {
   if (!s) return;
   if (t.hasAttribute('data-f')) { setPath(s, t.getAttribute('data-f'), t.value); touch(s); save(); }
   else if (t.hasAttribute('data-k') && t.hasAttribute('data-i')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-k')] = t.value; touch(s); save(); }
+});
+
+/* iOS ignores user-scalable=no, so block the pinch gesture itself */
+['gesturestart', 'gesturechange', 'gestureend'].forEach(function (n) {
+  document.addEventListener(n, function (e) { e.preventDefault(); });
 });
 
 boot();
