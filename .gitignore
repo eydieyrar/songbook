@@ -1,0 +1,5 @@
+# Keep these out of the public repo (personal context, design drafts, screenshots)
+HANDOFF_*.md
+Mockup.html
+mockup-shots/
+.claude/

@@ -1,0 +1,10 @@
+{
+  "name": "Song Notebook",
+  "short_name": "Songbook",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#faf3e0",
+  "theme_color": "#faf3e0",
+  "icons": [{ "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }]
+}

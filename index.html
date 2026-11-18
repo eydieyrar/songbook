@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Songbook">
+<meta name="theme-color" content="#faf3e0">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<title>Song Notebook</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;background:#faf3e0;color:#28241e;font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top) 12px 40px}
+h1{font-size:20px;margin:14px 0}
+button{font:inherit;padding:8px 12px;border:1px solid #b9a97d;background:#fff8e6;border-radius:8px;color:inherit}
+button.pri{background:#28241e;color:#fff;border-color:#28241e}
+button.danger{color:#a00}
+input,textarea{font:inherit;width:100%;padding:8px;border:1px solid #c9bb90;border-radius:6px;background:#fff}
+textarea{min-height:120px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.bar .sp{flex:1}
+.card{background:#fff;border:1px solid #d8cba5;border-radius:10px;padding:12px;margin:10px 0}
+.song{display:flex;justify-content:space-between;align-items:center;padding:12px;border-bottom:1px solid #e3d8b8}
+.song b{display:block}
+.song small{color:#7a6e50}
+label{display:block;font-size:13px;color:#6b5f42;margin:8px 0 3px}
+.chk{display:inline-flex;gap:6px;align-items:center;margin-right:10px;font-size:14px;color:inherit}
+.chk input{width:auto}
+.ln{display:grid;grid-template-columns:1fr;gap:4px;padding:8px 0;border-bottom:1px dashed #d8cba5}
+.ln .tools{display:flex;gap:6px}
+.ln .tools button{padding:4px 10px}
+.err{background:#fde8e8;border:1px solid #d99;padding:8px;border-radius:8px;margin:8px 0;font-size:14px}
+/* pages */
+.spread{display:flex;gap:10px;margin:12px 0;align-items:flex-start}
+.slot{flex:1;min-width:0}
+.page{aspect-ratio:33/48;container-type:inline-size;background:#fffdf6;border:1px solid #cfc29a;box-shadow:0 1px 4px rgba(0,0,0,.12);overflow:hidden}
+.in{--u:calc(100cqw/33);width:100%;height:100%;padding:0 calc(var(--u)*.0)}
+.grid .in{background-image:linear-gradient(#e6dcb8 1px,transparent 1px),linear-gradient(90deg,#e6dcb8 1px,transparent 1px);background-size:var(--u) var(--u)}
+.r{display:block;width:100%;white-space:nowrap;overflow:hidden;line-height:1;padding-left:calc(var(--u)*.3);--s:1}
+.b1{height:var(--u)}.b2{height:calc(var(--u)*2)}
+.ro,.en,.tr,.ar{height:var(--u);font-size:calc(var(--u)*.62*var(--s));line-height:var(--u)}
+.jp,.tj{height:calc(var(--u)*2);font-size:calc(var(--u)*1.3*var(--s));line-height:calc(var(--u)*2)}
+.ro,.tr{color:#6b5f42}
+.ar{color:#4a4233}
+.hid{color:transparent!important;background:#efe6c8}
+.rev{color:inherit!important;background:none}
+.notes{padding:calc(var(--u)*.6);white-space:pre-wrap;font-size:calc(var(--u)*.7);line-height:1.5;display:block}
+.pn{text-align:center;font-size:12px;color:#8a7d5c}
+</style>
+</head>
+<body>
+<div id="app">Loading…</div>
+<script>
+(function () {
+'use strict';
+var LSKEY = 'songbook.v1';
+var db = null, view = 'list', cur = null, status = '';
+var app = document.getElementById('app');
+
+function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function blank() { return { id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', notes: '', lines: [{ ro: '', jp: '', en: '', note: '' }] }; }
+function norm(d) {
+  if (!d || !Array.isArray(d.songs)) return null;
+  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {};
+  d.ui.grid = !!d.ui.grid;
+  d.songs.forEach(function (s) {
+    s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
+    s.artist = s.artist || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
+  });
+  return d;
+}
+function sample() {
+  var s = blank();
+  s.title = { jp: 'サンプル', ro: 'Sanpuru', en: 'Sample' };
+  s.artist = 'Example Artist';
+  s.lines = [{ ro: 'romaji line here', jp: '日本語の行', en: 'English line here', note: '' }];
+  return { songs: [s], ui: { grid: true, hide: {} }, savedAt: 0 };
+}
+
+/* ---------- storage ---------- */
+var idb = null;
+function idbOpen(cb) {
+  try {
+    var r = indexedDB.open('songbook', 1);
+    r.onupgradeneeded = function () { r.result.createObjectStore('kv'); };
+    r.onsuccess = function () { idb = r.result; cb(null); };
+    r.onerror = function () { cb(r.error || new Error('idb open failed')); };
+  } catch (e) { cb(e); }
+}
+function idbGet(cb) {
+  try {
+    var q = idb.transaction('kv', 'readonly').objectStore('kv').get('db');
+    q.onsuccess = function () { cb(null, q.result); };
+    q.onerror = function () { cb(q.error); };
+  } catch (e) { cb(e); }
+}
+function idbPut(str) {
+  if (!idb) return;
+  try {
+    var t = idb.transaction('kv', 'readwrite');
+    t.objectStore('kv').put(str, 'db');
+    t.onerror = function () { setStatus('IndexedDB save failed. Make a backup.'); };
+    t.onabort = t.onerror;
+  } catch (e) { setStatus('IndexedDB save failed. Make a backup.'); }
+}
+function setStatus(m) { status = m; var el = document.getElementById('status'); if (el) { el.textContent = m; el.style.display = m ? 'block' : 'none'; } }
+var lsOk = true;
+function save() {
+  db.savedAt = Date.now();
+  var str = JSON.stringify(db);
+  try { localStorage.setItem(LSKEY, str); lsOk = true; } catch (e) { lsOk = false; }
+  idbPut(str);
+  if (!lsOk && !idb) setStatus('Could not save anywhere. Make a backup now.');
+}
+function readLS() {
+  try { var s = localStorage.getItem(LSKEY); return s ? norm(JSON.parse(s)) : null; } catch (e) { return null; }
+}
+function boot() {
+  var done = false;
+  var ls = readLS();
+  function finish(fromIdb) {
+    if (done) return; done = true;
+    var pick = ls;
+    if (fromIdb && (!pick || (fromIdb.savedAt || 0) > (pick.savedAt || 0))) pick = fromIdb;
+    db = pick || sample();
+    if (!pick) save();
+    render();
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
+  }
+  var timer = setTimeout(function () { finish(null); }, 2000);
+  idbOpen(function (err) {
+    if (err) { clearTimeout(timer); setStatus('IndexedDB unavailable; using localStorage only.'); finish(null); return; }
+    idbGet(function (e2, v) {
+      clearTimeout(timer);
+      var parsed = null;
+      if (!e2 && v) { try { parsed = norm(JSON.parse(v)); } catch (e3) {} }
+      finish(parsed);
+    });
+  });
+}
+
+/* ---------- pagination ---------- */
+function song() { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === cur) return db.songs[i]; return null; }
+function pages(s) {
+  var out = [], L = s.lines, i = 0;
+  out.push({ first: true, lines: L.slice(0, 8) }); i = 8;
+  while (i < L.length) { out.push({ first: false, lines: L.slice(i, i + 9) }); i += 9; }
+  return out;
+}
+function row(cls, txt, k) {
+  var hide = k && db.ui.hide[k] ? ' hid' : '';
+  return '<span class="r ' + cls + hide + '"' + (k ? ' data-k="' + k + '"' : '') + '>' + esc(txt) + '</span>';
+}
+function pageHTML(s, p) {
+  var h = '<div class="page' + (db.ui.grid ? ' grid' : '') + '"><div class="in">';
+  if (p.first) {
+    h += row('b1', '') + row('tj', s.title.jp) + row('tr', s.title.ro) + row('en', s.title.en) + row('b1', '') + row('ar', s.artist) + row('b1', '');
+  } else h += row('b2', '');
+  p.lines.forEach(function (l, i) {
+    h += row('ro', l.ro, 'ro') + row('jp', l.jp, 'jp') + row('en', l.en, 'en');
+    if (p.first || i < p.lines.length - 1) h += row('b1', '');
+  });
+  return h + '</div></div>';
+}
+function notesHTML(s) {
+  return '<div class="page' + (db.ui.grid ? ' grid' : '') + '"><div class="in"><span class="notes">' + esc(s.notes || '(notes)') + '</span></div></div>';
+}
+
+/* ---------- views ---------- */
+function render() {
+  var h = '<div id="status" class="err" style="display:' + (status ? 'block' : 'none') + '">' + esc(status) + '</div>';
+  if (view === 'list') h += listV();
+  else if (view === 'read') h += readV();
+  else if (view === 'edit') h += editV();
+  else h += backupV();
+  app.innerHTML = h;
+  if (view === 'read') fit();
+}
+function listV() {
+  var h = '<h1>Song Notebook</h1><div class="bar"><button class="pri" data-act="new">+ New song</button><span class="sp"></span><button data-act="backup">Backup</button></div><div class="card" style="padding:0">';
+  if (!db.songs.length) h += '<div class="song">No songs yet.</div>';
+  db.songs.forEach(function (s) {
+    h += '<div class="song"><div data-act="open" data-id="' + s.id + '" style="flex:1"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist) + ' · ' + s.lines.length + ' lines</small></div>' +
+      '<button data-act="edit" data-id="' + s.id + '">Edit</button></div>';
+  });
+  return h + '</div>';
+}
+function readV() {
+  var s = song(); if (!s) { view = 'list'; return listV(); }
+  var h = '<div class="bar"><button data-act="list">‹ Songs</button><button data-act="edit" data-id="' + s.id + '">Edit</button><span class="sp"></span>' +
+    '<label class="chk"><input type="checkbox" data-grid' + (db.ui.grid ? ' checked' : '') + '>Grid</label></div>' +
+    '<div class="bar">Study: ' + ['ro', 'jp', 'en'].map(function (k) {
+      return '<label class="chk"><input type="checkbox" data-hide="' + k + '"' + (db.ui.hide[k] ? ' checked' : '') + '>hide ' + ({ ro: 'romaji', jp: 'Japanese', en: 'English' })[k] + '</label>';
+    }).join('') + '</div>';
+  var ps = pages(s), n = ps.length, i;
+  var slots = ps.map(function (p) { return pageHTML(s, p); });
+  var extra = '';
+  if (n % 2 === 1) slots.push(notesHTML(s));
+  else if (s.notes) extra = '<div class="card"><b>Notes</b><div style="white-space:pre-wrap">' + esc(s.notes) + '</div></div>';
+  for (i = 0; i < slots.length; i += 2) {
+    h += '<div class="spread"><div class="slot">' + slots[i] + '<div class="pn">' + (i + 1) + '</div></div><div class="slot">' + (slots[i + 1] || '') + '<div class="pn">' + (slots[i + 1] ? i + 2 : '') + '</div></div></div>';
+  }
+  return h + extra;
+}
+function editV() {
+  var s = song(); if (!s) { view = 'list'; return listV(); }
+  var h = '<div class="bar"><button data-act="read" data-id="' + s.id + '">‹ View</button><span class="sp"></span><button class="danger" data-act="del">Delete song</button></div>' +
+    '<div class="card"><label>Title (Japanese)</label><input data-f="title.jp" value="' + esc(s.title.jp) + '">' +
+    '<label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '">' +
+    '<label>Title (English)</label><input data-f="title.en" value="' + esc(s.title.en) + '">' +
+    '<label>Artist (e.g. 米津玄師 (Kenshi Yonezu))</label><input data-f="artist" value="' + esc(s.artist) + '">' +
+    '<label>Notes (right-hand page)</label><textarea data-f="notes">' + esc(s.notes) + '</textarea></div>' +
+    '<div class="card"><label>Paste lyrics here, then split into lines</label><textarea id="paste"></textarea>' +
+    '<div class="bar"><label class="chk"><input type="checkbox" id="dropsec" checked>Drop [Chorus] / 【サビ】 labels and (…) lines</label><button data-act="split">Split into lines</button></div></div>';
+  s.lines.forEach(function (l, i) {
+    h += '<div class="ln"><input data-k="ro" data-i="' + i + '" placeholder="romaji" value="' + esc(l.ro) + '">' +
+      '<input data-k="jp" data-i="' + i + '" placeholder="日本語" value="' + esc(l.jp) + '">' +
+      '<input data-k="en" data-i="' + i + '" placeholder="English" value="' + esc(l.en) + '">' +
+      '<input data-k="note" data-i="' + i + '" placeholder="note (not shown on page)" value="' + esc(l.note) + '">' +
+      '<div class="tools"><button data-act="up" data-i="' + i + '">↑</button><button data-act="down" data-i="' + i + '">↓</button><button data-act="ins" data-i="' + i + '">+ below</button><button class="danger" data-act="rm" data-i="' + i + '">✕</button></div></div>';
+  });
+  return h;
+}
+function backupV() {
+  return '<div class="bar"><button data-act="list">‹ Songs</button></div><div class="card"><b>Backup</b><p style="font-size:14px">Copy this text and keep it somewhere safe. Restore replaces everything.</p>' +
+    '<textarea id="bk" style="min-height:240px">' + esc(JSON.stringify(db)) + '</textarea>' +
+    '<div class="bar"><button data-act="copy">Copy</button><button data-act="dl">Download</button><button class="danger" data-act="restore">Restore from text</button></div></div>';
+}
+
+/* ---------- fit ---------- */
+function fit() {
+  var rows = app.querySelectorAll('.r');
+  for (var i = 0; i < rows.length; i++) {
+    var el = rows[i], s = 1;
+    el.style.setProperty('--s', 1);
+    while (el.scrollWidth > el.clientWidth + 1 && s > 0.4) { s -= 0.05; el.style.setProperty('--s', s); }
+  }
+}
+window.addEventListener('resize', function () { if (view === 'read') fit(); });
+
+/* ---------- editing helpers ---------- */
+function setPath(s, path, v) { var p = path.split('.'); if (p.length === 2) s[p[0]][p[1]] = v; else s[p[0]] = v; }
+function splitLines(text, drop) {
+  var out = [];
+  text.split(/\r?\n/).forEach(function (raw) {
+    var t = raw.replace(/^[\s　]+|[\s　]+$/g, '');
+    if (!t) return;
+    if (drop && (/^\[[^\]]*\]$/.test(t) || /^【[^】]*】$/.test(t) || /^[(（][^)）]*[)）]$/.test(t))) return;
+    out.push({ ro: '', jp: t, en: '', note: '' });
+  });
+  return out;
+}
+function download(name, text) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', function (e) {
+  var t = e.target.closest ? e.target.closest('[data-act],.r[data-k]') : null;
+  if (!t) return;
+  var act = t.getAttribute('data-act'), s = song(), i = +t.getAttribute('data-i'), id = t.getAttribute('data-id');
+  if (!act) { if (t.classList.contains('hid')) { t.classList.remove('hid'); t.classList.add('rev'); } return; }
+  if (act === 'new') { var n = blank(); db.songs.push(n); cur = n.id; save(); view = 'edit'; }
+  else if (act === 'open' || act === 'read') { cur = id || cur; view = 'read'; }
+  else if (act === 'edit') { cur = id || cur; view = 'edit'; }
+  else if (act === 'list') { view = 'list'; }
+  else if (act === 'backup') { view = 'backup'; }
+  else if (act === 'del') {
+    if (!confirm('Delete this song?')) return;
+    db.songs = db.songs.filter(function (x) { return x.id !== cur; }); cur = null; save(); view = 'list';
+  }
+  else if (act === 'split') {
+    var txt = document.getElementById('paste').value, add = splitLines(txt, document.getElementById('dropsec').checked);
+    if (!add.length) return;
+    if (s.lines.length === 1 && !s.lines[0].jp && !s.lines[0].ro && !s.lines[0].en) s.lines = [];
+    s.lines = s.lines.concat(add); save();
+  }
+  else if (act === 'up' && i > 0) { var a = s.lines; a.splice(i - 1, 2, a[i], a[i - 1]); save(); }
+  else if (act === 'down' && i < s.lines.length - 1) { var b = s.lines; b.splice(i, 2, b[i + 1], b[i]); save(); }
+  else if (act === 'ins') { s.lines.splice(i + 1, 0, { ro: '', jp: '', en: '', note: '' }); save(); }
+  else if (act === 'rm') { s.lines.splice(i, 1); if (!s.lines.length) s.lines.push({ ro: '', jp: '', en: '', note: '' }); save(); }
+  else if (act === 'copy') {
+    var ta = document.getElementById('bk'); ta.select();
+    try { navigator.clipboard.writeText(ta.value); } catch (x) { document.execCommand('copy'); }
+    return;
+  }
+  else if (act === 'dl') { download('songbook-backup.json', JSON.stringify(db)); return; }
+  else if (act === 'restore') {
+    var d; try { d = norm(JSON.parse(document.getElementById('bk').value)); } catch (x) { d = null; }
+    if (!d) { alert('That text is not a valid backup.'); return; }
+    if (!confirm('Replace ALL songs with this backup?')) return;
+    db = d; save(); view = 'list';
+  }
+  render();
+});
+document.addEventListener('input', function (e) {
+  var t = e.target, s = song();
+  if (!s) return;
+  if (t.hasAttribute('data-f')) { setPath(s, t.getAttribute('data-f'), t.value); save(); }
+  else if (t.hasAttribute('data-k') && t.hasAttribute('data-i')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-k')] = t.value; save(); }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.hasAttribute('data-hide')) { db.ui.hide[t.getAttribute('data-hide')] = t.checked; save(); render(); }
+  else if (t.hasAttribute('data-grid')) { db.ui.grid = t.checked; save(); render(); }
+});
+
+boot();
+try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+})();
+</script>
+</body>
+</html>
