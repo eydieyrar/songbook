@@ -34,6 +34,13 @@ button,input,textarea{font:inherit;color:inherit}
 h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .srch{display:flex;align-items:center;height:52px;border-radius:999px;padding:0 18px;gap:10px;margin-bottom:14px;cursor:text}
 .srch input{flex:1;border:0;background:none;outline:0;font-size:17px;min-width:0;height:100%}
+.fw{position:relative;display:flex;align-items:center;flex:1;min-width:0;width:100%}
+.fw.ta{align-items:flex-start}
+.fw>input,.fw>textarea{flex:1;min-width:0}
+.xc{display:none;position:relative;flex:none;width:20px;height:20px;margin-left:8px;border:0;padding:0;border-radius:50%;background:var(--mu);opacity:.55;color:var(--card);align-items:center;justify-content:center}
+.xc::after{content:'';position:absolute;inset:-12px}
+.fw.ta .xc{margin-top:2px}
+.fw.has .xc{display:flex}
 .grp{background:var(--card);border-radius:20px;overflow:hidden;margin:0 0 18px}
 .row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;min-height:58px}
 .row:last-child{border-bottom:0}
@@ -159,8 +166,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.2';
 var CHANGES = [
+  { v: '1.0.2', d: '18 Nov 2026', t: 'Clear buttons', s: 'A quick way to empty the search bar and the paste and link fields.', n: ['Clear (×) button in the search bar', 'Clear button in the Spotify link, source link and lyric paste fields', 'The Spotify link no longer disappears while you work'] },
   { v: '1.0.1', d: '18 Nov 2026', t: 'Polish', s: 'Smaller fixes to icons, menus and search after the redesign.', n: ['Real gear icon for Settings', 'Rounder eye icon', 'Language menu stays still when you toggle', 'Bigger search bar tap area', 'Version page with change notes'] },
   { v: '1.0.0', d: '18 Nov 2026', t: 'The iOS redesign', s: 'A new native iOS look, a safer way to add songs, and tools for lining up lyrics.', n: ['Glass tab bar, swipe back, Light / Dark / System', 'Save button for new songs, Discard prompt', 'Cover search, three paste fields, alignment card', 'Move or clear each language row separately', 'Hidden languages stay hidden, hold to peek'] },
   { v: '0.4', d: 'Nov 2026', t: 'No pinch zoom', s: 'The app no longer zooms when you pinch or double-tap.', n: ['Pinch-zoom blocked'] },
@@ -170,7 +178,7 @@ var CHANGES = [
 ];
 var db = null, status = '';
 var tab = 'songs', stacks = { songs: [{ p: 'list' }], add: [{ p: 'form' }] };
-var draft = null, pasteBuf = { jp: '', ro: '', en: '' }, covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
+var draft = null, pasteBuf = { jp: '', ro: '', en: '' }, spotBuf = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
 var pushing = false, freshScroll = true, an = { v: 0, m: 0, s: 0 };
 var KS = [0.85, 1, 1.15, 1.3], KN = ['Small', 'Default', 'Large', 'Extra large'], KL = ['S', 'M', 'L', 'XL'];
 var app = document.getElementById('app');
@@ -413,7 +421,7 @@ function searchLinks(s, k) {
 /* ---------- pages ---------- */
 function listP() {
   var h = navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
-    '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"></label>';
+    '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><span class="fw' + (query ? ' has' : '') + '"><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></label>';
   var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist).toLowerCase().indexOf(q) >= 0; });
   if (!db.songs.length) h += '<div class="grp"><div class="empty">No songs yet. Tap Add below to create your first song.</div></div>';
   else {
@@ -475,14 +483,14 @@ function formP() {
     '<div class="fld"><label>Artist</label><input data-f="artist" value="' + esc(s.artist) + '"></div>' +
     '<div class="fld"><label>Notes (shown at the end of the song)</label><textarea data-f="notes" style="min-height:60px">' + esc(s.notes) + '</textarea></div></div>';
   h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the title and artist above') + '</small></div></div>' +
-    '<div class="fld"><label>Spotify link (optional)</label><input id="spot" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"></div>' +
+    '<div class="fld"><label>Spotify link (optional)</label><span class="fw' + (spotBuf ? ' has' : '') + '"><input id="spot" value="' + esc(spotBuf) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
     '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="sbtn red" data-act="nocover">Remove cover</button>' : '') + '</div>' +
     (covers.length ? '<div class="covers">' + covers.map(function (c, i) { return '<div class="cv' + (s.cover === c.u ? ' sel' : '') + '" data-act="cover" data-i="' + i + '"><i><img src="' + esc(c.u) + '" alt=""></i>' + esc(c.l) + '</div>'; }).join('') + '</div>' : '') + '</div>';
   h += '<div class="sec">Lyric sources</div>';
   [['jp', 'Japanese'], ['ro', 'Romaji'], ['en', 'English']].forEach(function (r) {
     var k = r[0];
-    h += '<div class="grp"><div class="fld"><label>' + r[1] + ' lyrics (paste here)</label><textarea data-p="' + k + '" placeholder="Paste ' + r[1].toLowerCase() + ' lyrics, one line per line">' + esc(pasteBuf[k]) + '</textarea></div>' +
-      '<div class="fld"><label>Source link (optional, for your reference)</label><input data-s="' + k + '" value="' + esc(s.src[k]) + '" placeholder="https://…" autocapitalize="none" autocorrect="off"></div>' +
+    h += '<div class="grp"><div class="fld"><label>' + r[1] + ' lyrics (paste here)</label><span class="fw ta' + (pasteBuf[k] ? ' has' : '') + '"><textarea data-p="' + k + '" placeholder="Paste ' + r[1].toLowerCase() + ' lyrics, one line per line">' + esc(pasteBuf[k]) + '</textarea><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
+      '<div class="fld"><label>Source link (optional, for your reference)</label><span class="fw' + (s.src[k] ? ' has' : '') + '"><input data-s="' + k + '" value="' + esc(s.src[k]) + '" placeholder="https://…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
       '<div class="btnrow"><button class="sbtn" data-act="menu" data-k="' + k + '">Search for ' + r[1] + ' ▾</button></div>' +
       (menuOpen === k ? '<div class="menu glass' + (an.m ? ' in' : '') + '">' + searchLinks(s, k).map(function (l) { return '<a href="' + l[1] + '" target="_blank" rel="noopener">' + l[0] + '<span>↗</span></a>'; }).join('') + '</div>' : '') + '</div>';
   });
@@ -625,7 +633,7 @@ function findCovers(s) {
     });
   }).catch(function () { coverMsg = 'Could not reach the cover catalogue. Check your connection.'; render(true); });
 }
-function resetDraft() { draft = blank(); pasteBuf = { jp: '', ro: '', en: '' }; covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
+function resetDraft() { draft = blank(); pasteBuf = { jp: '', ro: '', en: '' }; spotBuf = ''; covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
 function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.notes || s.cover || s.lines.length || pasteBuf.jp || pasteBuf.ro || pasteBuf.en)); }
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
@@ -634,6 +642,11 @@ document.addEventListener('click', function (e) {
   var t = e.target.closest ? e.target.closest('[data-act]') : null;
   if (!t || !db) return;
   var act = t.getAttribute('data-act'), i = +t.getAttribute('data-i'), k = t.getAttribute('data-k'), id = t.getAttribute('data-id'), s;
+  if (act === 'xclear') {
+    var w = t.closest('.fw'), inp = w && w.querySelector('input,textarea');
+    if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); w.classList.remove('has'); try { inp.focus(); } catch (x) {} }
+    return;
+  }
   if (act === 'tab') { if (tab === 'add' && k === 'songs' && !draft) {} tab = k; vmenu = false; freshScroll = true; if (k === 'add' && !draft) resetDraft(); render(); return; }
   if (act === 'open') { curLine = 0; push({ p: 'read', id: id }); return; }
   if (act === 'edit') { push({ p: 'edit', id: id }); return; }
@@ -742,6 +755,8 @@ document.addEventListener('click', function (e) {
 });
 document.addEventListener('input', function (e) {
   var t = e.target; if (!db) return;
+  var fw = t.closest && t.closest('.fw'); if (fw) fw.classList.toggle('has', !!t.value);
+  if (t.id === 'spot') { spotBuf = t.value; return; }
   if (t.id === 'q') { query = t.value; var pos = t.selectionStart; render(true); var q2 = document.getElementById('q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (x) {} } return; }
   var s = fs();
   if (t.hasAttribute('data-p')) { pasteBuf[t.getAttribute('data-p')] = t.value; return; }
