@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Songbook">
 <meta name="theme-color" content="#f2f2f7" id="themecolor">
 <link rel="manifest" href="manifest.json">
@@ -149,7 +150,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .pill::after,.sbtn::after,.xround::after{content:'';position:absolute;inset:-8px}
 .pill.round::after{inset:-10px}
 .grpbar button::after{content:'';position:absolute;inset:-8px -2px}
-.tab::after{content:'';position:absolute;inset:-6px -4px}
+.tab::after{content:'';position:absolute;inset:-22px -8px -14px}
 .srch{position:relative}
 .srch::after{content:'';position:absolute;inset:-8px -4px}
 .xround{width:38px;height:38px;border-radius:50%;border:0;background:var(--field);color:#ff453a;display:flex;align-items:center;justify-content:center;padding:0}
@@ -180,8 +181,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.3';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.4';
 var CHANGES = [
+  { v: '1.0.4', d: '19 Nov 2026', t: 'New song, no bottom bar', s: 'You can no longer leave a new song by accident.', n: ['The page now fills behind the status bar and notch (re-add the app to the Home Screen to see it)', 'The bottom bar is hidden on the New song page','Cancel is the only way out, and it asks before discarding', 'Bigger tap area above the bottom bar'] },
   { v: '1.0.3', d: '19 Nov 2026', t: 'Touch and alignment', s: 'Easier tapping and tidier top bars.', n: ['Top buttons sit at the same height on every page', 'Ready to fill the area behind the status bar', 'Top bar title lines up with its buttons', 'Top buttons moved up to sit just under the status bar', 'Bigger tap areas around buttons, tabs and the search bar', 'Remove cover is now a small round × button'] },
   { v: '1.0.2', d: '18 Nov 2026', t: 'Clear buttons', s: 'A quick way to empty the search bar and the paste and link fields.', n: ['Clear (×) button in the search bar', 'Clear button in the Spotify link, source link and lyric paste fields', 'The Spotify link no longer disappears while you work'] },
   { v: '1.0.1', d: '18 Nov 2026', t: 'Polish', s: 'Smaller fixes to icons, menus and search after the redesign.', n: ['Real gear icon for Settings', 'Rounder eye icon', 'Language menu stays still when you toggle', 'Bigger search bar tap area', 'Version page with change notes'] },
@@ -579,8 +581,8 @@ function render(keep) {
     var last = i === st.length - 1;
     h += '<div class="layer' + (last ? ' topl' : '') + (last && pushing ? ' enter' : '') + '" style="z-index:' + (i + 1) + '">' + pageHTML(p) + '</div>';
   });
-  if (st.length === 1) h += '<div class="tabs glass">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (t) { return '<div class="tab' + (tab === t[0] ? ' on' : '') + '" data-act="tab" data-k="' + t[0] + '"><span>' + t[1] + '</span>' + t[2] + '</div>'; }).join('') + '</div>';
-  else h += '<div class="edge" id="edge"></div>';
+  if (st.length === 1 && cp().p === 'list') h += '<div class="tabs glass">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (t) { return '<div class="tab' + (tab === t[0] ? ' on' : '') + '" data-act="tab" data-k="' + t[0] + '"><span>' + t[1] + '</span>' + t[2] + '</div>'; }).join('') + '</div>';
+  else if (st.length > 1) h += '<div class="edge" id="edge"></div>';
   if (sheet) h += '<div class="scrim' + (an.s ? ' in' : '') + '" data-act="keep"></div><div class="sheet glass' + (an.s ? ' in' : '') + '"><button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button></div>';
   app.innerHTML = h;
   pushing = false; an = { v: 0, m: 0, s: 0 };
