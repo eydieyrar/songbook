@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <title>Songbook</title>
 <style>
-:root{--bg:#f2f2f7;--card:#fff;--fg:#000;--mu:#6e6e73;--line:rgba(60,60,67,.16);--ac:#fa2d48;--glass:rgba(255,255,255,.58);--glassb:rgba(255,255,255,.7);--sh:rgba(0,0,0,.16);--field:rgba(118,118,128,.12);color-scheme:light}
+:root{--sat:env(safe-area-inset-top,0px);--bg:#f2f2f7;--card:#fff;--fg:#000;--mu:#6e6e73;--line:rgba(60,60,67,.16);--ac:#fa2d48;--glass:rgba(255,255,255,.58);--glassb:rgba(255,255,255,.7);--sh:rgba(0,0,0,.16);--field:rgba(118,118,128,.12);color-scheme:light}
 :root.dark{--bg:#000;--card:#1c1c1e;--fg:#fff;--mu:#98989f;--line:rgba(84,84,88,.5);--glass:rgba(58,58,62,.52);--glassb:rgba(255,255,255,.14);--sh:rgba(0,0,0,.5);--field:rgba(118,118,128,.24);color-scheme:dark}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;background:var(--bg);color:var(--fg);font-family:-apple-system,"SF Pro Text","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow:hidden;overscroll-behavior:none}
@@ -21,16 +21,18 @@ button,input,textarea{font:inherit;color:inherit}
 .layer{position:absolute;inset:0;background:var(--bg);overflow:hidden}
 .layer.enter{animation:push .34s cubic-bezier(.2,.8,.2,1)}
 @keyframes push{from{transform:translateX(100%)}to{transform:none}}
-.body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(env(safe-area-inset-top,0px) + 64px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
+.body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 64px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
 .body::-webkit-scrollbar{display:none}
-.nav{position:absolute;left:0;right:0;top:0;z-index:20;padding:calc(env(safe-area-inset-top,0px) + 8px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));height:calc(env(safe-area-inset-top,0px) + 62px);display:flex;align-items:center;justify-content:space-between;gap:8px;pointer-events:none}
+.nav{position:absolute;left:0;right:0;top:0;z-index:20;padding:calc(var(--sat) + 4px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));height:calc(var(--sat) + 58px);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
 .nav>*{pointer-events:auto}
 .pill{border:0;font-size:15px;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;color:var(--fg)}
 .pill.pri{background:var(--ac);color:#fff;border:0}
+.nav .pill{height:44px;padding:0 16px}
+.nav .pill.round{padding:0}
 .pill.dis{opacity:.4;pointer-events:none}
 .pill.round{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
 .pill.round svg{display:block}
-.navt{flex:1;text-align:center;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.navt{line-height:44px;flex:1;text-align:center;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .srch{display:flex;align-items:center;height:52px;border-radius:999px;padding:0 18px;gap:10px;margin-bottom:14px;cursor:text}
 .srch input{flex:1;border:0;background:none;outline:0;font-size:17px;min-width:0;height:100%}
@@ -103,9 +105,10 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 /* lyrics reader */
 .rd{position:absolute;inset:0;background:var(--rb);color:#fff;overflow:hidden}
 .rd .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.7;pointer-events:none}
-.rd .nav{background:linear-gradient(var(--rb) 45%,transparent);height:calc(env(safe-area-inset-top,0px) + 100px);align-items:flex-start;padding-top:calc(env(safe-area-inset-top,0px) + 8px)}
+.rd .nav{background:linear-gradient(var(--rb) 45%,transparent);height:calc(var(--sat) + 100px);align-items:flex-start;padding-top:calc(var(--sat) + 4px)}
 .rd .nav .pill{color:#fff}
-.ly{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(env(safe-area-inset-top,0px) + 110px) max(22px,env(safe-area-inset-right,0px)) 60vh max(22px,env(safe-area-inset-left,0px))}
+
+.ly{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 110px) max(22px,env(safe-area-inset-right,0px)) 60vh max(22px,env(safe-area-inset-left,0px))}
 .ly::-webkit-scrollbar{display:none}
 .al{opacity:.32;filter:blur(1.3px);margin-bottom:26px;transform-origin:left center;transition:opacity .35s,filter .35s,transform .35s;cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .al.act{opacity:1;filter:none;transform:scale(1.03)}
@@ -120,7 +123,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .grpbar{display:flex;align-items:center;border-radius:999px;height:44px;padding:0 4px}
 .grpbar button{border:0;background:none;color:#fff;font-size:15px;font-weight:600;height:36px;padding:0 13px;border-radius:999px;display:flex;align-items:center;justify-content:center}
 .grpbar .sepv{width:1px;height:18px;background:rgba(255,255,255,.3)}
-.vmenu{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 62px);z-index:40;width:240px;border-radius:22px;padding:6px;color:#fff;transform-origin:top right}
+.vmenu{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(var(--sat) + 62px);z-index:40;width:240px;border-radius:22px;padding:6px;color:#fff;transform-origin:top right}
 .vmenu.in{animation:pop .18s ease-out}
 .vmenu div{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-size:16px;border-radius:16px;cursor:pointer}
 .vmenu div+div{border-top:1px solid rgba(255,255,255,.14)}
@@ -142,19 +145,29 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .sheet.out{animation:sheetout .2s ease-in forwards}
 .sheet button{border:0;font-size:17px;font-weight:600;padding:15px;border-radius:24px;background:var(--glassb)}
 .sheet button.red{color:#ff453a}
+.pill,.sbtn,.tab,.grpbar button,.xround{position:relative}
+.pill::after,.sbtn::after,.xround::after{content:'';position:absolute;inset:-8px}
+.pill.round::after{inset:-10px}
+.grpbar button::after{content:'';position:absolute;inset:-8px -2px}
+.tab::after{content:'';position:absolute;inset:-6px -4px}
+.srch{position:relative}
+.srch::after{content:'';position:absolute;inset:-8px -4px}
+.xround{width:38px;height:38px;border-radius:50%;border:0;background:var(--field);color:#ff453a;display:flex;align-items:center;justify-content:center;padding:0}
+.topscrim{position:fixed;left:0;right:0;top:0;height:calc(var(--sat) * 1.2);z-index:200;pointer-events:none;background:linear-gradient(rgba(24,24,32,.62) 55%,rgba(24,24,32,0))}
+:root.dark .topscrim{background:linear-gradient(rgba(0,0,0,.72) 55%,rgba(0,0,0,0))}
 .edge{position:absolute;left:0;top:0;bottom:0;width:22px;z-index:90;touch-action:none}
 @media (min-width:600px){
-  .ly{padding-top:calc(env(safe-area-inset-top,0px) + 120px);padding-left:56px;padding-right:56px}
+  .ly{padding-top:calc(var(--sat) + 120px);padding-left:56px;padding-right:56px}
   .al{margin-bottom:36px}
   .al .jp{font-size:calc(40px*var(--k,1))}.al .ro{font-size:calc(16px*var(--k,1))}.al .en{font-size:calc(19px*var(--k,1))}
   .body{max-width:720px;margin:0 auto;left:0;right:0}
 }
 @media (min-width:900px) and (orientation:landscape){
-  .ly{padding-left:420px;padding-right:56px;padding-top:calc(env(safe-area-inset-top,0px) + 80px)}
+  .ly{padding-left:420px;padding-right:56px;padding-top:calc(var(--sat) + 80px)}
   .al{margin-bottom:34px}
   .al .jp{font-size:calc(38px*var(--k,1))}.al .ro{font-size:calc(15px*var(--k,1))}.al .en{font-size:calc(18px*var(--k,1))}
   .rd .navt{visibility:hidden}
-  .cover{display:block;position:absolute;left:44px;top:calc(env(safe-area-inset-top,0px) + 90px);width:300px;z-index:4}
+  .cover{display:block;position:absolute;left:44px;top:calc(var(--sat) + 90px);width:300px;z-index:4}
   .cover .art{width:300px;height:300px;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.5);font-size:130px}
   .cover .ct{font-size:22px;font-weight:700;margin-top:22px}
   .cover .ca{opacity:.7;margin-top:4px}
@@ -163,11 +176,13 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 </head>
 <body>
 <div id="app">Loading…</div>
+<div class="topscrim"></div>
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.2';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.3';
 var CHANGES = [
+  { v: '1.0.3', d: '19 Nov 2026', t: 'Touch and alignment', s: 'Easier tapping and tidier top bars.', n: ['Top buttons sit at the same height on every page', 'Ready to fill the area behind the status bar', 'Top bar title lines up with its buttons', 'Top buttons moved up to sit just under the status bar', 'Bigger tap areas around buttons, tabs and the search bar', 'Remove cover is now a small round × button'] },
   { v: '1.0.2', d: '18 Nov 2026', t: 'Clear buttons', s: 'A quick way to empty the search bar and the paste and link fields.', n: ['Clear (×) button in the search bar', 'Clear button in the Spotify link, source link and lyric paste fields', 'The Spotify link no longer disappears while you work'] },
   { v: '1.0.1', d: '18 Nov 2026', t: 'Polish', s: 'Smaller fixes to icons, menus and search after the redesign.', n: ['Real gear icon for Settings', 'Rounder eye icon', 'Language menu stays still when you toggle', 'Bigger search bar tap area', 'Version page with change notes'] },
   { v: '1.0.0', d: '18 Nov 2026', t: 'The iOS redesign', s: 'A new native iOS look, a safer way to add songs, and tools for lining up lyrics.', n: ['Glass tab bar, swipe back, Light / Dark / System', 'Save button for new songs, Discard prompt', 'Cover search, three paste fields, alignment card', 'Move or clear each language row separately', 'Hidden languages stay hidden, hold to peek'] },
@@ -484,7 +499,7 @@ function formP() {
     '<div class="fld"><label>Notes (shown at the end of the song)</label><textarea data-f="notes" style="min-height:60px">' + esc(s.notes) + '</textarea></div></div>';
   h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the title and artist above') + '</small></div></div>' +
     '<div class="fld"><label>Spotify link (optional)</label><span class="fw' + (spotBuf ? ' has' : '') + '"><input id="spot" value="' + esc(spotBuf) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
-    '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="sbtn red" data-act="nocover">Remove cover</button>' : '') + '</div>' +
+    '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="xround" data-act="nocover" aria-label="Remove cover"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
     (covers.length ? '<div class="covers">' + covers.map(function (c, i) { return '<div class="cv' + (s.cover === c.u ? ' sel' : '') + '" data-act="cover" data-i="' + i + '"><i><img src="' + esc(c.u) + '" alt=""></i>' + esc(c.l) + '</div>'; }).join('') + '</div>' : '') + '</div>';
   h += '<div class="sec">Lyric sources</div>';
   [['jp', 'Japanese'], ['ro', 'Romaji'], ['en', 'English']].forEach(function (r) {
