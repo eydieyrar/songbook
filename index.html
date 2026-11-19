@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Songbook">
 <meta name="theme-color" content="#f2f2f7" id="themecolor">
 <link rel="manifest" href="manifest.json">
@@ -157,6 +156,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .topscrim{display:none;position:fixed;left:0;right:0;top:0;height:calc(var(--sat) * 1.2);z-index:200;pointer-events:none;background:linear-gradient(rgba(24,24,32,.62) 55%,rgba(24,24,32,0))}
 :root.ext .topscrim{display:block}
 :root.dark .topscrim{background:linear-gradient(rgba(0,0,0,.72) 55%,rgba(0,0,0,0))}
+.ptr{position:absolute;left:0;right:0;top:calc(var(--sat) + 70px);z-index:15;text-align:center;opacity:0;font-size:13px;font-weight:600;color:var(--mu);pointer-events:none;white-space:nowrap}
 .edge{position:absolute;left:0;top:0;bottom:0;width:22px;z-index:90;touch-action:none}
 @media (min-width:600px){
   .ly{padding-top:calc(var(--sat) + 120px);padding-left:56px;padding-right:56px}
@@ -182,8 +182,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.6';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.7';
 var CHANGES = [
+  { v: '1.0.7', d: '19 Nov 2026', t: 'Your brackets, your choice', s: 'You decide which bracket types are dropped when you paste lyrics.', n: ['Pull down on the song list to sync (the hint fades in as you pull)', 'Pasting recognises section markers by itself: names like [Verse 1] or サビ, and bracketed labels that open a stanza; (oohs) and (x2) are kept', 'The app no longer creates a sample song; a new device shows how to get your songs (Sync) instead', 'Removed the status bar setting that caused the empty strips at the top and bottom (re-add the app once)'] },
   { v: '1.0.6', d: '19 Nov 2026', t: 'No stray shadow at the top', s: 'The soft band under the status bar now appears only when the page runs behind it.', n: ['Removed the shadow under the status bar on installs where the page sits below it', 'Songs that were never uploaded are now sent to GitHub on the next sync'] },
   { v: '1.0.5', d: '19 Nov 2026', t: 'Swipe out of New song', s: 'The New song page now works with the edge swipe too.', n: ['Lyrics page top buttons use exactly the same spacing as every other page', 'Swipe from the left edge to leave New song', 'If you have typed anything, it asks Discard or Keep editing first'] },
   { v: '1.0.4', d: '19 Nov 2026', t: 'New song, no bottom bar', s: 'You can no longer leave a new song by accident.', n: ['The page now fills behind the status bar and notch (re-add the app to the Home Screen to see it)', 'The bottom bar is hidden on the New song page','Cancel is the only way out, and it asks before discarding', 'Bigger tap area above the bottom bar'] },
@@ -212,6 +213,7 @@ function norm(d) {
   d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {};
   d.ui.sz = (d.ui.sz === 0 || d.ui.sz > 0) && d.ui.sz < 4 ? Math.floor(d.ui.sz) : 1;
   d.ui.theme = d.ui.theme === 'light' || d.ui.theme === 'dark' ? d.ui.theme : 'system';
+  d.ui.strip = d.ui.strip || {}; if (d.ui.strip.sq == null) d.ui.strip.sq = 1; if (d.ui.strip.cjk == null) d.ui.strip.cjk = 1; if (d.ui.strip.rd == null) d.ui.strip.rd = 0;
   d.deleted = Array.isArray(d.deleted) ? d.deleted : [];
   d.songs.forEach(normSong);
   return d;
@@ -224,12 +226,12 @@ function normSong(s) {
   s.sha = s.sha || ''; s.dirty = !!s.dirty; s.updated = +s.updated || 0;
   return s;
 }
-function sample() {
-  var s = blank();
-  s.title = { jp: 'サンプル', ro: 'Sanpuru', en: 'Sample' };
-  s.artist = 'Example Artist';
-  s.lines = [{ ro: 'romaji line here', jp: '日本語の行', en: 'English line here', note: '' }];
-  return { songs: [s], ui: { sz: 1, theme: 'system', hide: {} }, deleted: [], savedAt: 0 };
+function emptyDb() {
+  return { songs: [], ui: { sz: 1, theme: 'system', hide: {} }, deleted: [], savedAt: 0 };
+}
+/* the placeholder song older versions made on first launch; removed automatically if never touched */
+function isBuiltInSample(s) {
+  return s.title.jp === '\u30b5\u30f3\u30d7\u30eb' && s.artist === 'Example Artist' && s.lines.length <= 1 && (!s.lines[0] || s.lines[0].jp === '\u65e5\u672c\u8a9e\u306e\u884c');
 }
 
 /* ---------- storage ---------- */
@@ -277,8 +279,10 @@ function boot() {
     if (done) return; done = true;
     var pick = ls;
     if (fromIdb && (!pick || (fromIdb.savedAt || 0) > (pick.savedAt || 0))) pick = fromIdb;
-    db = pick || sample();
-    if (!pick) save();
+    db = pick || emptyDb();
+    var before = db.songs.length;
+    db.songs = db.songs.filter(function (s) { return !(isBuiltInSample(s) && !s.sha && !s.dirty); });
+    if (!pick || db.songs.length !== before) save();
     applyTheme();
     render();
     if (cfg) sync();
@@ -307,11 +311,23 @@ window.addEventListener('orientationchange', checkExt);
 
 /* ---------- theme ---------- */
 var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+function hslHex(h, s, l) {
+  s /= 100; l /= 100;
+  var a = s * Math.min(l, 1 - l), f = function (n) { var k = (n + h / 30) % 12, c = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1); return ('0' + Math.round(255 * c).toString(16)).slice(-2); };
+  return '#' + f(0) + f(8) + f(4);
+}
+function syncBarColour() {
+  if (!db) return;
+  var m = document.getElementById('themecolor'); if (!m) return;
+  var dk = document.documentElement.classList.contains('dark'), s = (typeof stk === 'function' && stk().length) ? song() : null;
+  if (stk && cp().p === 'read' && s) m.setAttribute('content', hslHex(hue(s), 45, 9));
+  else m.setAttribute('content', dk ? '#000000' : '#f2f2f7');
+}
 function applyTheme() {
   var t = db ? db.ui.theme : 'system';
   var dk = t === 'dark' || (t === 'system' && mq && mq.matches);
   document.documentElement.classList.toggle('dark', dk);
-  var m = document.getElementById('themecolor'); if (m) m.setAttribute('content', dk ? '#000000' : '#f2f2f7');
+  syncBarColour();
 }
 if (mq && mq.addEventListener) mq.addEventListener('change', applyTheme);
 
@@ -364,8 +380,7 @@ function sync() {
   if (!cfg || syncing || !db) return Promise.resolve();
   /* a song that was never uploaded must not stay local-only: mark it to be sent (except the built-in sample) */
   db.songs.forEach(function (s) {
-    var isSample = s.title.jp === 'サンプル' && s.artist === 'Example Artist' && s.lines.length <= 1;
-    if (!s.sha && !s.dirty && !isSample) { s.dirty = true; s.updated = s.updated || Date.now(); }
+    if (!s.sha && !s.dirty && !isBuiltInSample(s)) { s.dirty = true; s.updated = s.updated || Date.now(); }
   });
   syncing = true; setSync('Syncing…');
   var changed = false, remote = {};
@@ -454,10 +469,10 @@ function searchLinks(s, k) {
 
 /* ---------- pages ---------- */
 function listP() {
-  var h = navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
+  var h = '<div class="ptr" id="ptr"></div>' + navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
     '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><span class="fw' + (query ? ' has' : '') + '"><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></label>';
   var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist).toLowerCase().indexOf(q) >= 0; });
-  if (!db.songs.length) h += '<div class="grp"><div class="empty">No songs yet. Tap Add below to create your first song.</div></div>';
+  if (!db.songs.length) h += '<div class="grp"><div class="empty">' + (cfg ? 'No songs yet. Pull down to sync, or tap Add to create one.' : 'No songs yet. Turn on Sync in Settings (the gear) to bring your songs here, or tap Add to create one.') + '</div></div>';
   else {
     h += '<div class="grp">';
     shown.forEach(function (s) {
@@ -608,6 +623,7 @@ function render(keep) {
   var sc = document.getElementById('sc');
   if (sc) { if (keep && !freshScroll) sc.scrollTop = top2; else centre(false); }
   freshScroll = false;
+  syncBarColour();
   if (focus) { var f = document.querySelector(focus.sel); if (f) { try { f.focus(); } catch (e) {} } }
 }
 function push(p) { stk().push(p); pushing = true; freshScroll = true; vmenu = false; menuOpen = null; render(); }
@@ -627,14 +643,30 @@ function closeAnim(sel, cb) {
 
 /* ---------- editing helpers ---------- */
 function setPath(s, path, v) { var p = path.split('.'); if (p.length === 2) s[p[0]][p[1]] = v; else s[p[0]] = v; }
+var SECTION = /^(pre[- ]?chorus|post[- ]?chorus|chorus|verse|bridge|intro|outro|hook|refrain|interlude|instrumental|solo|break|coda|ad[- ]?lib|drop|part|refrain|\d+\u756a|[A-Z]\u30e1\u30ed|\u30b5\u30d3|\u5927\u30b5\u30d3|\u30e9\u30b9\u30b5\u30d3|\u9593\u594f|\u30a4\u30f3\u30c8\u30ed|\u30a2\u30a6\u30c8\u30ed|\u30d6\u30ea\u30c3\u30b8|\u30bd\u30ed|\u30b3\u30fc\u30e9\u30b9|\u30f4\u30a1\u30fc\u30b9)(?![a-z])/i;
+var BRACKETS = [['sq', /^[\[\uFF3B]\s*([^\]\uFF3D]*?)\s*[\]\uFF3D]$/], ['cjk', /^\u3010\s*([^\u3011]*?)\s*\u3011$/], ['rd', /^[(\uFF08]\s*([^)\uFF09]*?)\s*[)\uFF09]$/], ['ang', /^[<\uFF1C\u3008\u300A]\s*([^>\uFF1E\u3009\u300B]*?)\s*[>\uFF1E\u3009\u300B]$/]];
+function bracketOf(s) {
+  var i, m;
+  for (i = 0; i < BRACKETS.length; i++) { m = BRACKETS[i][1].exec(s); if (m) return { type: BRACKETS[i][0], inner: m[1] }; }
+  return null;
+}
+/* A line that is only a bracketed phrase is a section marker when it names a section (Verse, Chorus, サビ ...),
+   or when it opens a stanza and its bracket type is the one this source uses for section names.
+   Brackets in the middle of a stanza or at its end ((ooh), (x2) ...) are always kept. */
 function splitLines(text) {
+  var raw = text.split(/\r?\n/).map(function (l) { return l.replace(/^[\s\u3000]+|[\s\u3000]+$/g, ''); });
+  var types = {}, i, b;
+  for (i = 0; i < raw.length; i++) { b = raw[i] && bracketOf(raw[i]); if (b && SECTION.test(b.inner)) types[b.type] = 1; }
   var out = [];
-  text.split(/\r?\n/).forEach(function (raw) {
-    var t = raw.replace(/^[\s　]+|[\s　]+$/g, '');
-    if (!t) return;
-    if (/^\[[^\]]*\]$/.test(t) || /^【[^】]*】$/.test(t) || /^[(（][^)）]*[)）]$/.test(t)) return;
-    out.push(t);
-  });
+  for (i = 0; i < raw.length; i++) {
+    var s = raw[i]; if (!s) continue;
+    b = bracketOf(s);
+    if (b) {
+      var opens = (i === 0 || !raw[i - 1]) && i + 1 < raw.length && raw[i + 1];
+      if (SECTION.test(b.inner) || (types[b.type] && opens)) continue;
+    }
+    out.push(s);
+  }
   return out;
 }
 function download(name, text) {
@@ -801,6 +833,43 @@ document.addEventListener('input', function (e) {
   } else if (t.hasAttribute('data-s')) { s.src[t.getAttribute('data-s')] = t.value; touch(s); if (s !== draft) save(); }
   else if (t.hasAttribute('data-c')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-c')] = t.value; touch(s); if (s !== draft) save(); updateAlign(); }
 });
+/* pull down on the song list to sync */
+(function () {
+  var y0 = null, dy = 0, busy = false;
+  function box() { return document.querySelector('.layer.topl .body'); }
+  function show(txt, prog) {
+    var el = document.getElementById('ptr'); if (!el) return;
+    el.textContent = txt; el.style.transition = 'none';
+    el.style.opacity = String(Math.max(0, Math.min(1, prog))); el.style.transform = 'translateY(' + (-14 + 14 * Math.min(1, prog)) + 'px)';
+  }
+  function hide() {
+    var el = document.getElementById('ptr'); if (!el) return;
+    el.style.transition = 'opacity .25s, transform .25s'; el.style.opacity = '0'; el.style.transform = 'translateY(-14px)';
+  }
+  document.addEventListener('touchstart', function (e) {
+    y0 = null; dy = 0;
+    if (busy || !db || stk().length !== 1 || cp().p !== 'list') return;
+    var b = box(); if (!b || !e.target.closest || !e.target.closest('.layer.topl .body')) return;
+    if (b.scrollTop <= 0) y0 = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (y0 == null) return;
+    dy = e.touches[0].clientY - y0;
+    if (dy <= 0) { show('', 0); return; }
+    show(dy >= 100 ? 'Release to sync' : 'Pull to sync', dy / 100);
+  }, { passive: true });
+  function end() {
+    if (y0 == null) return;
+    var go = dy >= 100; y0 = null; dy = 0;
+    if (!go) { hide(); return; }
+    if (!cfg) { show('Sync is off. Turn it on in Settings', 1); setTimeout(hide, 1800); return; }
+    busy = true; show('Syncing…', 1);
+    sync().then(function () { show(syncMsg || 'Done', 1); setTimeout(hide, 900); busy = false; }, function () { hide(); busy = false; });
+  }
+  document.addEventListener('touchend', end);
+  document.addEventListener('touchcancel', function () { y0 = null; dy = 0; hide(); });
+})();
+
 /* hold a hidden bar to peek; it hides again on release */
 var peek = [];
 document.addEventListener('pointerdown', function (e) {
