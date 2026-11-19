@@ -13,7 +13,7 @@
 <style>
 :root{--sat:env(safe-area-inset-top,0px);--bg:#f2f2f7;--card:#fff;--fg:#000;--mu:#6e6e73;--line:rgba(60,60,67,.16);--ac:#fa2d48;--glass:rgba(255,255,255,.58);--glassb:rgba(255,255,255,.7);--sh:rgba(0,0,0,.16);--field:rgba(118,118,128,.12);color-scheme:light}
 :root.dark{--bg:#000;--card:#1c1c1e;--fg:#fff;--mu:#98989f;--line:rgba(84,84,88,.5);--glass:rgba(58,58,62,.52);--glassb:rgba(255,255,255,.14);--sh:rgba(0,0,0,.5);--field:rgba(118,118,128,.24);color-scheme:dark}
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 html,body{height:100%;background:var(--bg);color:var(--fg);font-family:-apple-system,"SF Pro Text","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;-webkit-text-size-adjust:100%;overflow:hidden;overscroll-behavior:none}
 #app{position:fixed;inset:0;overflow:hidden}
 button,input,textarea{font:inherit;color:inherit}
@@ -179,7 +179,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .topscrim{display:none;position:fixed;left:0;right:0;top:0;height:calc(var(--sat) * 1.2);z-index:200;pointer-events:none;background:linear-gradient(rgba(24,24,32,.62) 55%,rgba(24,24,32,0))}
 :root.ext .topscrim{display:block}
 :root.dark .topscrim{background:linear-gradient(rgba(0,0,0,.72) 55%,rgba(0,0,0,0))}
-.ptr{position:absolute;left:0;right:0;top:calc(var(--sat) + 52px);height:20px;z-index:15;font-size:13px;font-weight:600;color:var(--mu);pointer-events:none;white-space:nowrap;will-change:transform}
+.ptr{position:absolute;left:0;right:0;top:calc(var(--sat) + 16px);height:20px;line-height:20px;z-index:15;font-size:13px;font-weight:600;color:var(--mu);pointer-events:none;white-space:nowrap;will-change:transform}
 .ptr span{position:absolute;left:0;right:0;text-align:center;opacity:0}
 .edge{position:absolute;left:0;top:0;bottom:0;width:22px;z-index:90;touch-action:none}
 @media (min-width:600px){
@@ -206,8 +206,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.2.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.2.1';
 var CHANGES = [
+  { v: '1.2.1', d: '21 Nov 2026', t: 'Pull to sync, finished', s: 'The status text settles into place after you let go, then fades.', n: ['The pull hint starts level with the Settings button and keeps a fixed distance above the title as you drag', 'After you release, it eases back to that spot, shows Syncing, and fades out', 'Double-tap zoom is now blocked on every part of the page, including inside scrolling lists such as the line editor'] },
   { v: '1.2.0', d: '20 Nov 2026', t: 'Keep your pasted lyrics', s: 'Pasted text stays in its box so you can edit it and apply again.', n: ['Pasted Japanese, romaji and English text is kept with the song after you apply it', 'A red round × in the corner of each paste box clears it', 'Clearing asks first, with a sheet that slides up'] },
   { v: '1.1.1', d: '20 Nov 2026', t: 'Pull and recoil, as iOS does it', s: 'The pull hint travels with the page, and flicks that reach the end bounce back.', n: ['The pull-to-sync text keeps moving with the page and crossfades from Pull to Release without stopping', 'Pages that scroll use the phone\'s own momentum, so a flick that reaches the top or bottom recoils', 'Pages too short to scroll still stretch and spring back while you drag'] },
   { v: '1.1.0', d: '20 Nov 2026', t: 'Smooth transitions everywhere', s: 'Add slides in and out like every other page, and the bottom bar glides instead of popping.', n: ['New song slides in from the right, and Cancel, the back swipe and Discard all slide it out over the song list', 'The bottom bar glides in and out with the page instead of appearing suddenly', 'Pull to sync now needs a pull twice as long, and the page always springs straight back', 'Fixed stray lines that could show on lyric blocks while they changed from selected to dimmed'] },
@@ -502,7 +503,7 @@ function searchLinks(s, k) {
 
 /* ---------- pages ---------- */
 function listP() {
-  var h = '<div class="ptr" id="ptr"><span id="pa">Pull to sync</span><span id="pb">Release to sync</span></div>' + navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
+  var h = navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
     '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><span class="fw' + (query ? ' has' : '') + '"><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></label>';
   var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist).toLowerCase().indexOf(q) >= 0; });
   if (!db.songs.length) h += '<div class="grp"><div class="empty">' + (cfg ? 'No songs yet. Pull down to sync, or tap Add to create one.' : 'No songs yet. Turn on Sync in Settings (the gear) to bring your songs here, or tap Add to create one.') + '</div></div>';
@@ -674,7 +675,7 @@ function sheetHTML() {
 function scaffold() {
   if (document.getElementById('stage')) return;
   app.innerHTML = '<div id="status" class="err" style="position:absolute;left:12px;right:12px;top:70px;z-index:80;display:none"></div><div id="stage"></div>' +
-    '<div class="tabs glass hide" id="tabs">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (tb, i) { return '<div class="tab' + (i === 0 ? ' on' : '') + '" data-act="tab" data-k="' + tb[0] + '"><span>' + tb[1] + '</span>' + tb[2] + '</div>'; }).join('') + '</div><div id="over"></div>';
+    '<div class="ptr" id="ptr" style="display:none"><span id="pa">Pull to sync</span><span id="pb">Release to sync</span></div><div class="tabs glass hide" id="tabs">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (tb, i) { return '<div class="tab' + (i === 0 ? ' on' : '') + '" data-act="tab" data-k="' + tb[0] + '"><span>' + tb[1] + '</span>' + tb[2] + '</div>'; }).join('') + '</div><div id="over"></div>';
 }
 function render(keep) {
   if (!db) return;
@@ -693,6 +694,7 @@ function render(keep) {
   if (st.length > 1) h += '<div class="edge" id="edge"></div>';
   document.getElementById('stage').innerHTML = h;
   document.getElementById('tabs').classList.toggle('hide', !(st.length === 1 && cp().p === 'list'));
+  document.getElementById('ptr').style.display = (st.length === 1 && cp().p === 'list') ? '' : 'none';
   var se = document.getElementById('status'); se.textContent = status; se.style.display = status ? 'block' : 'none';
   document.getElementById('over').innerHTML = sheet ? sheetHTML() : '';
   pushing = false; an = { v: 0, m: 0, s: 0 };
@@ -924,40 +926,63 @@ document.addEventListener('input', function (e) {
 /* Pull physics.
    Pages that scroll use the phone's own momentum and bounce (so a fling that reaches the end recoils).
    Pages too short to scroll get a stretch-and-spring of their own while the finger is down.
-   On the song list the hint travels with the page: it fades in, then crossfades to "Release to sync" without ever stopping. */
+   On the song list the hint starts level with the gear button at zero opacity, keeps a fixed distance above the title as it is dragged,
+   crossfades from "Pull to sync" to "Release to sync", and after release it settles back to its starting spot, says what is happening, then fades. */
 (function () {
-  var st = null, touching = false, busy = false, nativeMax = 0, hintOn = false, EASE = 'cubic-bezier(.32,.72,0,1)';
+  var st = null, touching = false, busy = false, nativeMax = 0, hintOn = false, lingering = false, fadeT = null, fadeT2 = null, EASE = 'cubic-bezier(.32,.72,0,1)';
   var T1 = 64, T2 = 80; /* page displacement where "Pull" is fully visible, and where "Release" takes over */
   function rb(d) { return 150 * (1 - Math.exp(-d / 260)); }
   function listPage() { return !!db && stk().length === 1 && cp().p === 'list'; }
-  function setHint(d, ms, text) {
-    var el = document.getElementById('ptr'), a = document.getElementById('pa'), b = document.getElementById('pb');
-    if (!el || !a || !b) return;
-    el.style.transition = ms ? 'transform ' + ms + 'ms ' + EASE : 'none';
-    el.style.transform = 'translateY(' + (d - 26) + 'px)';
+  function parts() { return { el: document.getElementById('ptr'), a: document.getElementById('pa'), b: document.getElementById('pb') }; }
+  function setHint(d, ms) {
+    var q = parts(); if (!q.el) return;
+    q.el.style.transition = ms ? 'transform ' + ms + 'ms ' + EASE : 'none';
+    q.el.style.transform = 'translateY(' + d + 'px)';
     var x = d <= T1 ? 0 : Math.min(1, (d - T1) / (T2 - T1));
     var fa = d <= T1 ? Math.max(0, d / T1) : 1 - x;
-    a.style.transition = b.style.transition = ms ? 'opacity ' + Math.min(ms, 300) + 'ms' : 'none';
-    a.style.opacity = String(fa); b.style.opacity = String(x);
-    if (text) b.textContent = text;
+    q.a.style.transition = q.b.style.transition = ms ? 'opacity ' + Math.min(ms, 300) + 'ms' : 'none';
+    q.a.style.opacity = String(fa); q.b.style.opacity = String(x);
     hintOn = d > 0;
   }
-  function resetHintText() { var b = document.getElementById('pb'); if (b) b.textContent = 'Release to sync'; }
+  function stopLinger() {
+    clearTimeout(fadeT); clearTimeout(fadeT2); lingering = false;
+    var q = parts(); if (q.b) q.b.textContent = 'Release to sync';
+  }
+  /* after release: settle to the resting spot, show the status, hold it a moment, then fade */
+  function linger(text, promise, minMs) {
+    stopLinger(); lingering = true;
+    var q = parts(); if (!q.el) { lingering = false; return; }
+    q.b.textContent = text;
+    q.el.style.transition = 'transform .55s ' + EASE; q.el.style.transform = 'translateY(0)';
+    q.a.style.transition = q.b.style.transition = 'opacity .25s';
+    q.a.style.opacity = '0'; q.b.style.opacity = '1';
+    var t0 = Date.now();
+    function fade() {
+      fadeT = setTimeout(function () {
+        var z = parts(); if (z.b) { z.b.style.transition = 'opacity .35s'; z.b.style.opacity = '0'; }
+        fadeT2 = setTimeout(function () { lingering = false; hintOn = false; var y = parts(); if (y.b) y.b.textContent = 'Release to sync'; }, 380);
+      }, Math.max(0, minMs - (Date.now() - t0)));
+    }
+    if (promise) promise.then(fade, fade); else fade();
+  }
   function trigger() {
-    if (busy) return;
-    if (!cfg) { setHint(T2 + 4, 0, 'Sync is off. Turn it on in Settings'); setTimeout(function () { setHint(0, 400); setTimeout(resetHintText, 450); }, 1800); return; }
-    busy = true; sync().then(function () { busy = false; }, function () { busy = false; });
+    if (!cfg) { linger('Sync is off. Turn it on in Settings', null, 1800); return; }
+    if (busy) { linger('Syncing…', null, 900); return; }
+    busy = true;
+    var pr = sync().then(function () { busy = false; }, function () { busy = false; });
+    linger('Syncing…', pr, 1000);
   }
   /* scrollable pages: the browser bounces; we read how far it has stretched and keep the hint attached */
   document.addEventListener('scroll', function (e) {
     var b = e.target;
-    if (!b || !b.classList || !b.classList.contains('body') || !listPage()) return;
+    if (lingering || !b || !b.classList || !b.classList.contains('body') || !listPage()) return;
     var d = Math.max(0, -b.scrollTop);
     if (d > 0) { nativeMax = Math.max(nativeMax, d); setHint(d, 0); }
     else if (hintOn && !touching) { setHint(0, 0); }
   }, true);
   document.addEventListener('touchstart', function (e) {
     st = null; touching = true; nativeMax = 0;
+    if (lingering) stopLinger();
     if (!db || !e.target.closest || e.target.closest('#edge') || !e.target.closest('.layer.topl .body')) return;
     var b = document.querySelector('.layer.topl .body'); if (!b) return;
     st = { y: e.touches[0].clientY, b: b, short: b.scrollHeight <= b.clientHeight + 1, top: b.scrollTop <= 0, bot: b.scrollTop + b.clientHeight >= b.scrollHeight - 1, mode: null, d: 0 };
@@ -972,17 +997,15 @@ document.addEventListener('input', function (e) {
   function end() {
     touching = false;
     var s = st; st = null;
-    var go = false;
+    var go = false, pulled = false;
     if (s && s.short && (s.mode === 'down' || s.mode === 'up')) {
       s.b.style.transition = 'transform .55s ' + EASE; s.b.style.transform = 'translateY(0)';
       setTimeout(function () { s.b.style.transition = ''; s.b.style.transform = ''; }, 580);
-      if (s.mode === 'down' && listPage()) { go = s.d >= T2; setHint(0, 550); }
-    } else if (listPage() && nativeMax > 0) {
-      go = nativeMax >= T2;
-      if (!(document.querySelector('.layer.topl .body').scrollTop < 0)) setHint(0, 300);
-    }
+      if (s.mode === 'down' && listPage()) { go = s.d >= T2; pulled = true; }
+    } else if (listPage() && nativeMax > 0) { go = nativeMax >= T2; pulled = true; }
     nativeMax = 0;
     if (go) trigger();
+    else if (pulled) setHint(0, 550);
   }
   document.addEventListener('touchend', end);
   document.addEventListener('touchcancel', end);
