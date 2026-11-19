@@ -106,7 +106,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 /* lyrics reader */
 .rd{position:absolute;inset:0;background:var(--rb);color:#fff;overflow:hidden}
 .rd .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.7;pointer-events:none}
-.rd .nav{background:linear-gradient(var(--rb) 45%,transparent);height:calc(var(--sat) + 100px);align-items:flex-start;padding-top:calc(var(--sat) + 4px)}
+.rd .nav{background:linear-gradient(var(--rb) 45%,transparent);height:calc(var(--sat) + 100px)}
 .rd .nav .pill{color:#fff}
 
 .ly{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 110px) max(22px,env(safe-area-inset-right,0px)) 60vh max(22px,env(safe-area-inset-left,0px))}
@@ -181,8 +181,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.4';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.5';
 var CHANGES = [
+  { v: '1.0.5', d: '19 Nov 2026', t: 'Swipe out of New song', s: 'The New song page now works with the edge swipe too.', n: ['Lyrics page top buttons use exactly the same spacing as every other page', 'Swipe from the left edge to leave New song', 'If you have typed anything, it asks Discard or Keep editing first'] },
   { v: '1.0.4', d: '19 Nov 2026', t: 'New song, no bottom bar', s: 'You can no longer leave a new song by accident.', n: ['The page now fills behind the status bar and notch (re-add the app to the Home Screen to see it)', 'The bottom bar is hidden on the New song page','Cancel is the only way out, and it asks before discarding', 'Bigger tap area above the bottom bar'] },
   { v: '1.0.3', d: '19 Nov 2026', t: 'Touch and alignment', s: 'Easier tapping and tidier top bars.', n: ['Top buttons sit at the same height on every page', 'Ready to fill the area behind the status bar', 'Top bar title lines up with its buttons', 'Top buttons moved up to sit just under the status bar', 'Bigger tap areas around buttons, tabs and the search bar', 'Remove cover is now a small round × button'] },
   { v: '1.0.2', d: '18 Nov 2026', t: 'Clear buttons', s: 'A quick way to empty the search bar and the paste and link fields.', n: ['Clear (×) button in the search bar', 'Clear button in the Spotify link, source link and lyric paste fields', 'The Spotify link no longer disappears while you work'] },
@@ -582,7 +583,7 @@ function render(keep) {
     h += '<div class="layer' + (last ? ' topl' : '') + (last && pushing ? ' enter' : '') + '" style="z-index:' + (i + 1) + '">' + pageHTML(p) + '</div>';
   });
   if (st.length === 1 && cp().p === 'list') h += '<div class="tabs glass">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (t) { return '<div class="tab' + (tab === t[0] ? ' on' : '') + '" data-act="tab" data-k="' + t[0] + '"><span>' + t[1] + '</span>' + t[2] + '</div>'; }).join('') + '</div>';
-  else if (st.length > 1) h += '<div class="edge" id="edge"></div>';
+  else if (st.length > 1 || cp().p === 'form') h += '<div class="edge" id="edge"></div>';
   if (sheet) h += '<div class="scrim' + (an.s ? ' in' : '') + '" data-act="keep"></div><div class="sheet glass' + (an.s ? ' in' : '') + '"><button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button></div>';
   app.innerHTML = h;
   pushing = false; an = { v: 0, m: 0, s: 0 };
@@ -798,7 +799,7 @@ document.addEventListener('pointercancel', unpeek);
   var drag = null;
   document.addEventListener('pointerdown', function (e) {
     var ed = e.target.closest && e.target.closest('#edge');
-    if (!ed || stk().length < 2) return;
+    if (!ed || (stk().length < 2 && cp().p !== 'form')) return;
     var el = document.querySelector('.layer.topl'); if (!el) return;
     drag = { x0: e.clientX, el: el, dx: 0 }; el.style.transition = 'none';
     try { ed.setPointerCapture(e.pointerId); } catch (x) {}
@@ -812,7 +813,11 @@ document.addEventListener('pointercancel', unpeek);
     if (!drag) return;
     var el = drag.el, dx = drag.dx; drag = null;
     el.style.transition = 'transform .25s cubic-bezier(.2,.8,.2,1)';
-    if (dx > window.innerWidth * 0.3) { el.style.transform = 'translateX(100%)'; setTimeout(pop, 230); } else el.style.transform = 'translateX(0)';
+    if (dx > window.innerWidth * 0.3) {
+      if (stk().length > 1) { el.style.transform = 'translateX(100%)'; setTimeout(pop, 230); }
+      else if (draftDirty()) { el.style.transform = 'translateX(0)'; sheet = true; an.s = 1; render(true); }
+      else { el.style.transform = 'translateX(100%)'; setTimeout(function () { tab = 'songs'; freshScroll = true; render(); }, 230); }
+    } else el.style.transform = 'translateX(0)';
   }
   document.addEventListener('pointerup', end);
   document.addEventListener('pointercancel', end);
