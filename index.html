@@ -19,12 +19,13 @@ html,body{height:100%;background:var(--bg);color:var(--fg);font-family:-apple-sy
 button,input,textarea{font:inherit;color:inherit}
 .glass{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(190%);backdrop-filter:blur(22px) saturate(190%);border:1px solid rgba(255,255,255,.35);box-shadow:0 8px 28px var(--sh),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(255,255,255,.08)}
 .layer{position:absolute;inset:0;background:var(--bg);overflow:hidden}
-.layer.enter{animation:push .34s cubic-bezier(.2,.8,.2,1)}
+.layer.enter{animation:push .4s cubic-bezier(.32,.72,0,1)}
 @keyframes push{from{transform:translateX(100%)}to{transform:none}}
-.body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 64px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
+.body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-y:none;padding:calc(var(--sat) + 52px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
 .body::-webkit-scrollbar{display:none}
-.nav{position:absolute;left:0;right:0;top:0;z-index:20;padding:calc(var(--sat) + 4px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));height:calc(var(--sat) + 58px);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
+.nav{position:absolute;left:0;right:0;top:0;z-index:20;padding:calc(var(--sat) + 4px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));height:calc(var(--sat) + 64px);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
 .nav>*{pointer-events:auto}
+.nav{background:linear-gradient(var(--bg) 0%,color-mix(in srgb,var(--bg) 90%,transparent) 35%,color-mix(in srgb,var(--bg) 55%,transparent) 65%,color-mix(in srgb,var(--bg) 14%,transparent) 90%,color-mix(in srgb,var(--bg) 0%,transparent) 100%)}
 .pill{border:0;font-size:15px;font-weight:600;padding:9px 16px;border-radius:999px;cursor:pointer;color:var(--fg)}
 .pill.pri{background:var(--ac);color:#fff;border:0}
 .nav .pill{height:44px;padding:0 16px}
@@ -32,8 +33,8 @@ button,input,textarea{font:inherit;color:inherit}
 .pill.dis{opacity:.4;pointer-events:none}
 .pill.round{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;font-size:20px;flex:none}
 .pill.round svg{display:block}
-.navt{line-height:44px;flex:1;text-align:center;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
+.navt{position:absolute;left:50%;top:calc(var(--sat) + 4px);transform:translateX(-50%);width:calc(100% - 250px);line-height:44px;text-align:center;font-weight:600;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .srch{display:flex;align-items:center;height:52px;border-radius:999px;padding:0 18px;gap:10px;margin-bottom:14px;cursor:text}
 .srch input{flex:1;border:0;background:none;outline:0;font-size:17px;min-width:0;height:100%}
 .fw{position:relative;display:flex;align-items:center;flex:1;min-width:0;width:100%}
@@ -48,8 +49,10 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .row:last-child{border-bottom:0}
 .row b{display:block;font-size:16px;font-weight:600}.row small{color:var(--mu);font-size:13px}
 .row .sp{flex:1;min-width:0}.row .sp b,.row .sp small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.chev{color:var(--mu);font-size:18px}
-.dot{width:8px;height:8px;border-radius:50%;background:#30d158;flex:none}.dot.o{background:#ff9f0a}
+.chev{color:var(--mu);width:10px;height:16px;display:flex;align-items:center;justify-content:center;flex:none}
+.chev svg{display:block}
+.rt{display:flex;align-items:center;gap:12px;flex:none}
+.dot{width:10px;height:10px;border-radius:50%;background:#30d158;flex:none;display:block}.dot.o{background:#ff9f0a}
 .cov{position:relative;overflow:hidden;width:44px;height:44px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;font-style:normal}
 .cov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .sec{font-size:13px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin:18px 14px 6px}
@@ -82,9 +85,17 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .cell .tag{font-size:10px;font-weight:700;color:var(--mu);width:20px;flex:none}
 .cell.gap .tag{color:#ff9f0a}
 .cell input{flex:1;min-width:0;border:0;background:none;outline:0;font-size:15px;padding:6px 0}
-.cell.ro input{font-size:13px;color:var(--mu)}.cell.en input{font-size:14px}.cell.note input{font-size:13px;font-style:italic}
+.cell.jp .tag{color:var(--ac)}
+.cell.ro .tag,.cell.en .tag{opacity:.5}
+.cell.gap .tag{opacity:1}
+.cell.ro input,.cell.en input{font-size:14px;color:color-mix(in srgb,var(--fg) 78%,transparent)}
+.cell.note input{font-size:13px;font-style:italic;font-synthesis:none}
+.cell .tag svg{display:block}
+.cell.note.empty .tag{opacity:.4}
+.mv button.off{opacity:.28;pointer-events:none}
 .mv{display:flex;border-radius:999px;overflow:hidden;flex:none;gap:1px}
-.mv button{border:0;background:var(--field);width:30px;height:28px;font-size:12px}
+.mv button{border:0;background:var(--field);width:30px;height:28px;padding:0;display:flex;align-items:center;justify-content:center;line-height:1;color:var(--fg)}
+.mv button svg{display:block}
 .lnact{display:flex;justify-content:flex-end;gap:6px;padding:6px 8px}
 .lnact button{border:0;background:var(--field);font-size:12px;font-weight:600;padding:5px 11px;border-radius:999px}
 .al2{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
@@ -105,17 +116,17 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 /* lyrics reader */
 .rd{position:absolute;inset:0;background:var(--rb);color:#fff;overflow:hidden}
 .rd .blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.7;pointer-events:none}
-.rd .nav{background:linear-gradient(var(--rb) 45%,transparent);height:calc(var(--sat) + 100px)}
+.rd .nav{height:calc(var(--sat) + 100px);background:linear-gradient(hsl(var(--h) 45% 9%) 0%,hsl(var(--h) 45% 9% / .92) 28%,hsl(var(--h) 45% 9% / .7) 50%,hsl(var(--h) 45% 9% / .38) 70%,hsl(var(--h) 45% 9% / .12) 88%,hsl(var(--h) 45% 9% / 0) 100%)}
 .rd .nav .pill{color:#fff}
 
-.ly{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 110px) max(22px,env(safe-area-inset-right,0px)) 60vh max(22px,env(safe-area-inset-left,0px))}
+.ly{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 110px) max(22px,env(safe-area-inset-right,0px)) calc(100px + env(safe-area-inset-bottom,0px)) max(22px,env(safe-area-inset-left,0px))}
 .ly::-webkit-scrollbar{display:none}
 .al{opacity:.32;filter:blur(1.3px);margin-bottom:26px;transform-origin:left center;transition:opacity .35s,filter .35s,transform .35s;cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .al.act{opacity:1;filter:none;transform:scale(1.03)}
 .al .jp{font-weight:800;font-size:calc(27px*var(--k,1));line-height:1.28;margin:3px 0}
 .al .ro{font-size:calc(12.5px*var(--k,1));opacity:.7;display:block}
 .al .en{font-size:calc(14px*var(--k,1));opacity:.75;display:block}
-.al .nt{display:none;margin-top:6px;padding-left:8px;border-left:3px solid #f5c542;font-size:13px;opacity:.9}
+.al .nt{display:none;margin-top:6px;padding-left:8px;border-left:3px solid #f5c542;font-size:13px;opacity:.9;font-style:italic;font-synthesis:none}
 .al.act .nt{display:block}
 .hid{color:transparent!important;background:rgba(255,255,255,.2);border-radius:6px}
 .anote{margin-top:30px;padding:14px;border-radius:14px;background:rgba(255,255,255,.1);white-space:pre-wrap;font-size:14px;line-height:1.5}
@@ -123,8 +134,11 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .grpbar{display:flex;align-items:center;border-radius:999px;height:44px;padding:0 4px}
 .grpbar button{border:0;background:none;color:#fff;font-size:15px;font-weight:600;height:36px;padding:0 13px;border-radius:999px;display:flex;align-items:center;justify-content:center}
 .grpbar .sepv{width:1px;height:18px;background:rgba(255,255,255,.3)}
-.vmenu{position:absolute;right:max(12px,env(safe-area-inset-right,0px));top:calc(var(--sat) + 62px);z-index:40;width:240px;border-radius:22px;padding:6px;color:#fff;transform-origin:top right}
-.vmenu.in{animation:pop .18s ease-out}
+.eyebtn{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 18px);z-index:30;width:54px;height:54px;border-radius:50%;border:0;color:#fff;display:flex;align-items:center;justify-content:center;padding:0}
+.eyebtn::after{content:'';position:absolute;inset:-10px}
+.vmenu{position:absolute;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 84px);z-index:40;width:240px;border-radius:22px;padding:6px;color:#fff;transform-origin:bottom right}
+.vmenu.in{animation:popup .18s cubic-bezier(.32,.72,0,1)}
+.vmenu div.dis{opacity:.35;pointer-events:none}
 .vmenu div{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-size:16px;border-radius:16px;cursor:pointer}
 .vmenu div+div{border-top:1px solid rgba(255,255,255,.14)}
 .vmenu .ck{width:20px;text-align:right;font-weight:700}
@@ -137,6 +151,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 @keyframes sheetin{from{transform:translateY(120%);opacity:0}}
 @keyframes sheetout{to{transform:translateY(120%);opacity:0}}
 .vmenu.out,.menu.out{animation:popout .16s ease-in forwards}
+@keyframes popup{from{opacity:0;transform:translateY(12px) scale(.9)}to{opacity:1;transform:none}}
+@keyframes popupout{to{opacity:0;transform:translateY(12px) scale(.9)}}
+.vmenu.out{animation:popupout .18s cubic-bezier(1,0,.68,.28) forwards}
 .scrim{position:absolute;inset:0;z-index:45;background:rgba(0,0,0,.35)}
 .scrim.in{animation:fadein .22s ease-out}
 .scrim.out{animation:fadeout .16s ease-in forwards}
@@ -182,8 +199,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.7';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.8';
 var CHANGES = [
+  { v: '1.0.8', d: '20 Nov 2026', t: 'Smoother and tidier', s: 'Gentler animations, a bottom-right language button and cleaner editing.', n: ['Swipe back and every page ease out smoothly, with the page behind sliding in', 'Pages stretch and spring back when pulled past the top or bottom', 'Page titles sit just under the top buttons and are always centred', 'Show or hide languages is now a button at the bottom right; languages with no lines are dimmed', 'Lyrics scroll 100px past the last line', 'Edit is a round pen button on the lyrics page', 'Edit page: round check button and a soft title bar', 'Line editor: comment icon for notes (dim until there is a note), empty fields are truly blank, centred move and clear icons, buttons only work on filled fields, notes are italic', 'Delete song stands alone at the bottom of the editor; the language menu closes as smoothly as it opens', 'Song list: dot and arrow line up', 'RO and EN row labels are dimmed; only a missing line lights its label orange'] },
   { v: '1.0.7', d: '19 Nov 2026', t: 'Your brackets, your choice', s: 'You decide which bracket types are dropped when you paste lyrics.', n: ['Pull down on the song list to sync (the hint fades in as you pull)', 'Pasting recognises section markers by itself: names like [Verse 1] or サビ, and bracketed labels that open a stanza; (oohs) and (x2) are kept', 'The app no longer creates a sample song; a new device shows how to get your songs (Sync) instead', 'Removed the status bar setting that caused the empty strips at the top and bottom (re-add the app once)'] },
   { v: '1.0.6', d: '19 Nov 2026', t: 'No stray shadow at the top', s: 'The soft band under the status bar now appears only when the page runs behind it.', n: ['Removed the shadow under the status bar on installs where the page sits below it', 'Songs that were never uploaded are now sent to GitHub on the next sync'] },
   { v: '1.0.5', d: '19 Nov 2026', t: 'Swipe out of New song', s: 'The New song page now works with the edge swipe too.', n: ['Lyrics page top buttons use exactly the same spacing as every other page', 'Swipe from the left edge to leave New song', 'If you have typed anything, it asks Discard or Keep editing first'] },
@@ -456,6 +474,10 @@ function covH(s, big) {
   return '<i class="cov' + (big ? ' art' : '') + '" style="background:' + grad(hue(s)) + '">' + (s.cover ? '<img src="' + esc(s.cover) + '" alt="" onerror="this.remove()">' : '') + '歌</i>';
 }
 function nonBlank(s, k) { var n = 0; s.lines.forEach(function (l) { if (String(l[k]).replace(/\s/g, '')) n++; }); return n; }
+var CHEV = '<span class="chev"><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1.5 1.5L6.5 7L1.5 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+var PEN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/></svg>';
+var CHECK = '<svg width="20" height="16" viewBox="0 0 20 16"><path d="M2 8.5L7.5 14L18 2.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var NOTEI = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5V12a8.5 8.5 0 1 1 8.5 8.5Z"/><path d="M12 9v6M9 12h6"/></svg>';
 var BACK = '<svg width="10" height="17" viewBox="0 0 10 17"><path d="M8.4 1.4 L1.5 8.5 L8.4 15.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 var GEAR = '<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 var EYE = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12C4.8 7.6 8.2 5.4 12 5.4S19.2 7.6 21.4 12C19.2 16.4 15.8 18.6 12 18.6S4.8 16.4 2.6 12Z"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>';
@@ -477,7 +499,7 @@ function listP() {
     h += '<div class="grp">';
     shown.forEach(function (s) {
       h += '<div class="row" data-act="open" data-id="' + s.id + '">' + covH(s) + '<div class="sp"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist) + ' · ' + s.lines.length + (s.lines.length === 1 ? ' line' : ' lines') + '</small></div>' +
-        (conf[s.id] ? '<button class="sbtn red" data-act="conflict" data-id="' + s.id + '">Choose version</button>' : (cfg ? '<span class="dot' + (s.dirty ? ' o' : '') + '"></span>' : '')) + '<span class="chev">›</span></div>';
+        '<span class="rt">' + (conf[s.id] ? '<button class="sbtn red" data-act="conflict" data-id="' + s.id + '">Choose version</button>' : (cfg ? '<span class="dot' + (s.dirty ? ' o' : '') + '"></span>' : '')) + CHEV + '</span></div>';
     });
     if (!shown.length) h += '<div class="empty">No songs match.</div>';
     h += '</div>';
@@ -488,10 +510,10 @@ function readerP(p) {
   var s = song(); if (!s) return '';
   var h1 = hue(s), h2 = (h1 + 140) % 360, name = s.title.jp || s.title.en || '(untitled)', hide = db.ui.hide;
   if (curLine >= s.lines.length) curLine = 0;
-  var h = '<div class="rd" style="--rb:hsl(' + h1 + ',45%,9%);--k:' + KS[db.ui.sz] + '">' +
+  var h = '<div class="rd" style="--h:' + h1 + ';--rb:hsl(' + h1 + ',45%,9%);--k:' + KS[db.ui.sz] + '">' +
     '<i class="blob" style="width:420px;height:420px;background:hsl(' + h1 + ',85%,58%);left:-120px;top:-80px"></i>' +
     '<i class="blob" style="width:480px;height:480px;background:hsl(' + h2 + ',75%,55%);right:-160px;bottom:-120px"></i>' +
-    navBar(backBtn(), esc(name), '<div class="grpbar glass"><button data-act="vmenu" aria-label="Show or hide languages">' + EYE + '</button><i class="sepv"></i><button data-act="edit" data-id="' + s.id + '">Edit</button></div>') +
+    navBar(backBtn(), esc(name), '<button class="pill round glass" data-act="edit" data-id="' + s.id + '" aria-label="Edit">' + PEN + '</button>') +
     '<div class="cover">' + covH(s, true) + '<div class="ct">' + esc(name) + '</div><div class="ca">' + esc(s.artist) + '</div></div><div class="ly" id="sc">';
   s.lines.forEach(function (l, i) {
     h += '<div class="al' + (i === curLine ? ' act' : '') + '" data-act="line" data-i="' + i + '">' +
@@ -503,15 +525,44 @@ function readerP(p) {
   if (!s.lines.length) h += '<div class="anote">No lyrics yet. Tap Edit to add some.</div>';
   if (s.notes) h += '<div class="anote">' + esc(s.notes) + '</div>';
   h += '</div>';
-  if (vmenu) h += '<div class="mscrim" data-act="vclose"></div><div class="vmenu glass' + (an.v ? ' in' : '') + '">' + ['ro', 'jp', 'en'].map(function (k) {
-    return '<div data-act="hide" data-k="' + k + '"><span>' + ({ ro: 'Romaji', jp: '日本語 (Japanese)', en: 'English' })[k] + '</span><span class="ck">' + (hide[k] ? '' : '✓') + '</span></div>';
-  }).join('') + '</div>';
+  h += '<button class="eyebtn glass" data-act="vmenu" aria-label="Show or hide languages">' + EYE + '</button>';
+  if (vmenu) h += '<div class="mscrim" data-act="vclose"></div>' + vmenuHTML(s, an.v);
   return h + '</div>';
 }
+function vmenuHTML(s, anim) {
+  var hide = db.ui.hide;
+  return '<div class="vmenu glass' + (anim ? ' in' : '') + '">' + ['ro', 'jp', 'en'].map(function (k) {
+    var have = nonBlank(s, k) > 0;
+    return '<div class="' + (have ? '' : 'dis') + '" data-act="hide" data-k="' + k + '"><span>' + ({ ro: 'Romaji', jp: '日本語 (Japanese)', en: 'English' })[k] + '</span><span class="ck">' + (have && !hide[k] ? '✓' : '') + '</span></div>';
+  }).join('') + '</div>';
+}
+var vtimer = null;
+function setVMenu(open) {
+  vmenu = open;
+  var el = document.querySelector('.vmenu'), sc = document.querySelector('.mscrim');
+  clearTimeout(vtimer);
+  if (open) {
+    if (el) {
+      el.classList.remove('out'); void el.offsetWidth; el.classList.add('in');
+      if (!sc) { var s2 = document.createElement('div'); s2.className = 'mscrim'; s2.setAttribute('data-act', 'vclose'); el.parentNode.insertBefore(s2, el); }
+    } else { an.v = 1; render(true); }
+  } else {
+    if (sc) sc.parentNode.removeChild(sc);
+    if (el) {
+      el.classList.remove('in'); el.classList.add('out');
+      vtimer = setTimeout(function () { var e2 = document.querySelector('.vmenu'); if (e2 && !vmenu) e2.parentNode.removeChild(e2); }, 190);
+    }
+  }
+}
+var UPI = '<svg width="11" height="9" viewBox="0 0 11 9"><path d="M5.5 1L10 8H1z" fill="currentColor"/></svg>';
+var DNI = '<svg width="11" height="9" viewBox="0 0 11 9"><path d="M5.5 8L1 1H10z" fill="currentColor"/></svg>';
+var XI = '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M1.5 1.5L8.5 8.5M8.5 1.5L1.5 8.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
 function cell(s, i, k) {
-  var tag = { ro: 'RO', jp: 'JP', en: 'EN' }[k], v = s.lines[i][k], gp = (!String(v).replace(/\s/g, '') && s.lines[i].jp && k !== 'jp') ? ' gap' : '';
-  return '<div class="cell ' + k + gp + '"><span class="tag">' + tag + '</span><input data-c="' + k + '" data-i="' + i + '" placeholder="(blank)" value="' + esc(v) + '"><div class="mv">' +
-    '<button data-act="mv" data-i="' + i + '" data-k="' + k + '" data-d="-1" aria-label="Move up">▲</button><button data-act="mv" data-i="' + i + '" data-k="' + k + '" data-d="1" aria-label="Move down">▼</button><button data-act="clr" data-i="' + i + '" data-k="' + k + '" aria-label="Clear">✕</button></div></div>';
+  var tag = { ro: 'RO', jp: 'JP', en: 'EN' }[k], v = s.lines[i][k], filled = !!String(v).replace(/\s/g, '');
+  var gp = (!filled && s.lines[i].jp && k !== 'jp') ? ' gap' : '', off = filled ? '' : ' class="off" disabled';
+  var d = ' data-i="' + i + '" data-k="' + k + '"';
+  return '<div class="cell ' + k + gp + '"><span class="tag">' + tag + '</span><input data-c="' + k + '" data-i="' + i + '" value="' + esc(v) + '"><div class="mv">' +
+    '<button' + off + ' data-act="mv"' + d + ' data-d="-1" aria-label="Move up">' + UPI + '</button><button' + off + ' data-act="mv"' + d + ' data-d="1" aria-label="Move down">' + DNI + '</button><button' + off + ' data-act="clr"' + d + ' aria-label="Clear">' + XI + '</button></div></div>';
 }
 function alignH(s) {
   var nj = nonBlank(s, 'jp');
@@ -524,7 +575,8 @@ function alignH(s) {
 function formP() {
   var nw = cp().p === 'form', s = fs();
   if (!s) return '';
-  var save = '<button class="pill pri' + ((nw && !s.title.jp.trim() && !s.title.en.trim()) ? ' dis' : '') + '" data-act="save" id="savebtn">' + (nw ? 'Save' : 'Done') + '</button>';
+  var dis = (nw && !s.title.jp.trim() && !s.title.en.trim()) ? ' dis' : '';
+  var save = nw ? '<button class="pill pri' + dis + '" data-act="save" id="savebtn">Save</button>' : '<button class="pill round pri" data-act="save" id="savebtn" aria-label="Done">' + CHECK + '</button>';
   var h = navBar(nw ? '<button class="pill glass" data-act="cancel">Cancel</button>' : backBtn(), nw ? 'New song' : 'Edit song', save) + '<div class="body"><div class="sec">Details</div><div class="grp">' +
     '<div class="fld"><label>Title (Japanese)</label><input data-f="title.jp" value="' + esc(s.title.jp) + '" placeholder="Required"></div>' +
     '<div class="fld"><label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '"></div>' +
@@ -546,10 +598,11 @@ function formP() {
   h += '<div id="align">' + alignH(s) + '</div><div class="sec">Lines</div>';
   s.lines.forEach(function (l, i) {
     h += '<div class="ln">' + cell(s, i, 'ro') + cell(s, i, 'jp') + cell(s, i, 'en') +
-      '<div class="cell note"><span class="tag">NT</span><input data-c="note" data-i="' + i + '" placeholder="note (shows under the line when it is current)" value="' + esc(l.note) + '"></div>' +
+      '<div class="cell note' + (l.note ? '' : ' empty') + '"><span class="tag">' + NOTEI + '</span><input data-c="note" data-i="' + i + '" value="' + esc(l.note) + '"></div>' +
       '<div class="lnact"><button data-act="ins" data-i="' + i + '">+ line below</button><button data-act="rm" data-i="' + i + '">Delete line</button></div></div>';
   });
-  h += '<div class="btnrow" style="padding:0 0 12px"><button class="sbtn" data-act="addline">+ Add line</button>' + (nw ? '' : '<button class="sbtn red" data-act="del">Delete song</button>') + '</div>';
+  if (!s.lines.length) h += '<div class="btnrow" style="justify-content:center;padding:6px 0 0"><button class="sbtn" data-act="addline">Add first line</button></div>';
+  if (!nw) h += '<div class="btnrow" style="justify-content:center;padding:64px 0 24px"><button class="sbtn red" data-act="del">Delete song</button></div>';
   return h + '</div>';
 }
 function setP() {
@@ -557,9 +610,9 @@ function setP() {
     ['system', 'light', 'dark'].map(function (k) { return '<button data-act="theme" data-k="' + k + '" class="' + (db.ui.theme === k ? 'on' : '') + '">' + k.charAt(0).toUpperCase() + k.slice(1) + '</button>'; }).join('') + '</div>' +
     '<div class="sec">Reading · text size for all songs</div><div class="seg solo">' + KL.map(function (n, i) { return '<button data-act="size" data-k="' + i + '" class="' + (db.ui.sz === i ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div>' +
     '<div class="grp"><div class="fld"><div style="font-weight:800;font-size:' + (22 * KS[db.ui.sz]) + 'px;line-height:1.3">夜明けの電車</div><label style="margin:4px 0 0">' + KN[db.ui.sz] + '</label></div></div>' +
-    '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small><span class="chev">›</span></div>' +
-    '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div><span class="chev">›</span></div></div>' +
-    '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small><span class="chev">›</span></div></div></div>';
+    '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small>' + CHEV + '</div>' +
+    '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div>' + CHEV + '</div></div>' +
+    '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small>' + CHEV + '</div></div></div>';
 }
 function syncP() {
   var c = cfg || { owner: '', repo: 'songbook-data', token: '' };
@@ -584,7 +637,7 @@ function conflictP() {
     '<div class="btnrow" style="padding:0"><button class="sbtn pri" data-act="keepmine">Keep mine</button><button class="sbtn" data-act="keeptheirs">Keep theirs</button><button class="sbtn" data-act="keepboth">Keep both</button></div></div>';
 }
 function verP() {
-  return navBar(backBtn(), 'Version', '<span></span>') + '<div class="body"><h1 class="lg" style="margin-top:24px">What\'s new</h1>' + CHANGES.map(function (c, i) {
+  return navBar(backBtn(), 'Version', '<span></span>') + '<div class="body"><h1 class="lg">What\'s new</h1>' + CHANGES.map(function (c, i) {
     return '<div class="sec">' + c.v + (i === 0 ? ' · current' : '') + ' · ' + c.d + '</div><div class="grp"><div class="fld"><b style="font-size:17px">' + esc(c.t) + '</b><div style="color:var(--mu);font-size:14px;line-height:1.4;margin-top:3px">' + esc(c.s) + '</div></div>' + c.n.map(function (x) { return '<div class="fld" style="font-size:14px">• ' + esc(x) + '</div>'; }).join('') + '</div>';
   }).join('') + '</div>';
 }
@@ -631,8 +684,10 @@ function pop() { var s = stk(); if (s.length > 1) { s.pop(); freshScroll = true;
 function popAnim() {
   var s = stk(); if (s.length < 2) return;
   var el = document.querySelector('.layer.topl'); if (!el) { pop(); return; }
-  el.style.transition = 'transform .3s cubic-bezier(.2,.8,.2,1)'; el.style.boxShadow = '-8px 0 30px rgba(0,0,0,.25)'; el.style.transform = 'translateX(100%)';
-  setTimeout(pop, 280);
+  var lay = document.querySelectorAll('.layer'), prev = lay.length > 1 ? lay[lay.length - 2] : null, E = 'cubic-bezier(.32,.72,0,1)';
+  if (prev) { prev.style.transition = 'none'; prev.style.transform = 'translateX(-28%)'; void prev.offsetWidth; prev.style.transition = 'transform .42s ' + E; prev.style.transform = 'translateX(0)'; }
+  el.style.transition = 'transform .42s ' + E; el.style.boxShadow = '-8px 0 30px rgba(0,0,0,.25)'; el.style.transform = 'translateX(100%)';
+  setTimeout(pop, 440);
 }
 function closeAnim(sel, cb) {
   var els = document.querySelectorAll(sel);
@@ -736,8 +791,8 @@ document.addEventListener('click', function (e) {
     var ck = document.querySelector('.vmenu [data-k="' + k + '"] .ck'); if (ck) ck.textContent = db.ui.hide[k] ? '' : '✓';
     return;
   }
-  if (act === 'vmenu') { if (vmenu) closeAnim('.vmenu,.mscrim', function () { vmenu = false; render(true); }); else { vmenu = true; an.v = 1; render(true); } return; }
-  if (act === 'vclose') { closeAnim('.vmenu', function () { vmenu = false; render(true); }); return; }
+  if (act === 'vmenu') { setVMenu(!vmenu); return; }
+  if (act === 'vclose') { setVMenu(false); return; }
   if (act === 'theme') { db.ui.theme = k; save(); applyTheme(); render(true); return; }
   if (act === 'size') { db.ui.sz = +k; save(); render(true); return; }
   if (act === 'menu') { if (menuOpen === k) closeAnim('.menu', function () { menuOpen = null; render(true); }); else { menuOpen = k; an.m = 1; render(true); } return; }
@@ -831,43 +886,55 @@ document.addEventListener('input', function (e) {
     setPath(s, t.getAttribute('data-f'), t.value); touch(s); if (s !== draft) save();
     var b = document.getElementById('savebtn'); if (b && cp().p === 'form') b.classList.toggle('dis', !s.title.jp.trim() && !s.title.en.trim());
   } else if (t.hasAttribute('data-s')) { s.src[t.getAttribute('data-s')] = t.value; touch(s); if (s !== draft) save(); }
-  else if (t.hasAttribute('data-c')) { s.lines[+t.getAttribute('data-i')][t.getAttribute('data-c')] = t.value; touch(s); if (s !== draft) save(); updateAlign(); }
+  else if (t.hasAttribute('data-c')) {
+    s.lines[+t.getAttribute('data-i')][t.getAttribute('data-c')] = t.value; touch(s); if (s !== draft) save(); updateAlign();
+    if (t.getAttribute('data-c') === 'note') { var nc = t.closest('.cell'); if (nc) nc.classList.toggle('empty', !t.value.trim()); }
+  }
 });
-/* pull down on the song list to sync */
+/* every page eases like iOS: dragging past the top or bottom stretches the page and it springs back; on the song list a long pull also syncs */
 (function () {
-  var y0 = null, dy = 0, busy = false;
-  function box() { return document.querySelector('.layer.topl .body'); }
-  function show(txt, prog) {
+  var st = null, busy = false, EASE = 'cubic-bezier(.32,.72,0,1)';
+  function rb(d) { return 150 * (1 - Math.exp(-d / 260)); }
+  function hint(txt, prog) {
     var el = document.getElementById('ptr'); if (!el) return;
     el.textContent = txt; el.style.transition = 'none';
     el.style.opacity = String(Math.max(0, Math.min(1, prog))); el.style.transform = 'translateY(' + (-14 + 14 * Math.min(1, prog)) + 'px)';
   }
-  function hide() {
+  function hideHint() {
     var el = document.getElementById('ptr'); if (!el) return;
     el.style.transition = 'opacity .25s, transform .25s'; el.style.opacity = '0'; el.style.transform = 'translateY(-14px)';
   }
   document.addEventListener('touchstart', function (e) {
-    y0 = null; dy = 0;
-    if (busy || !db || stk().length !== 1 || cp().p !== 'list') return;
-    var b = box(); if (!b || !e.target.closest || !e.target.closest('.layer.topl .body')) return;
-    if (b.scrollTop <= 0) y0 = e.touches[0].clientY;
+    st = null;
+    if (!db || !e.target.closest || e.target.closest('#edge') || !e.target.closest('.layer.topl .body')) return;
+    var b = document.querySelector('.layer.topl .body'); if (!b) return;
+    st = { y: e.touches[0].clientY, b: b, top: b.scrollTop <= 0, bot: b.scrollTop + b.clientHeight >= b.scrollHeight - 1, mode: null, dy: 0 };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
-    if (y0 == null) return;
-    dy = e.touches[0].clientY - y0;
-    if (dy <= 0) { show('', 0); return; }
-    show(dy >= 100 ? 'Release to sync' : 'Pull to sync', dy / 100);
+    if (!st) return;
+    var dy = e.touches[0].clientY - st.y; st.dy = dy;
+    if (!st.mode) { if (dy > 6 && st.top) st.mode = 'down'; else if (dy < -6 && st.bot) st.mode = 'up'; else if (Math.abs(dy) > 6) st.mode = 'none'; }
+    if (st.mode === 'down') {
+      st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + rb(dy) + 'px)';
+      if (cp().p === 'list' && stk().length === 1) hint(dy >= 100 ? 'Release to sync' : 'Pull to sync', dy / 100);
+    } else if (st.mode === 'up') { st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + (-rb(-dy)) + 'px)'; }
   }, { passive: true });
   function end() {
-    if (y0 == null) return;
-    var go = dy >= 100; y0 = null; dy = 0;
-    if (!go) { hide(); return; }
-    if (!cfg) { show('Sync is off. Turn it on in Settings', 1); setTimeout(hide, 1800); return; }
-    busy = true; show('Syncing…', 1);
-    sync().then(function () { show(syncMsg || 'Done', 1); setTimeout(hide, 900); busy = false; }, function () { hide(); busy = false; });
+    if (!st) return;
+    var s = st; st = null;
+    if (s.mode === 'down' || s.mode === 'up') {
+      s.b.style.transition = 'transform .55s ' + EASE; s.b.style.transform = 'translateY(0)';
+      setTimeout(function () { s.b.style.transition = ''; s.b.style.transform = ''; }, 580);
+    }
+    var go = s.mode === 'down' && s.dy >= 100 && cp().p === 'list' && stk().length === 1;
+    if (!go) { if (s.mode !== 'down') hideHint(); else hideHint(); return; }
+    if (busy) { hideHint(); return; }
+    if (!cfg) { hint('Sync is off. Turn it on in Settings', 1); setTimeout(hideHint, 1800); return; }
+    busy = true; hint('Syncing…', 1);
+    sync().then(function () { hint(syncMsg || 'Done', 1); setTimeout(hideHint, 900); busy = false; }, function () { hideHint(); busy = false; });
   }
   document.addEventListener('touchend', end);
-  document.addEventListener('touchcancel', function () { y0 = null; dy = 0; hide(); });
+  document.addEventListener('touchcancel', end);
 })();
 
 /* hold a hidden bar to peek; it hides again on release */
@@ -879,30 +946,42 @@ document.addEventListener('pointerdown', function (e) {
 function unpeek() { peek.forEach(function (h) { h.classList.add('hid'); }); peek = []; }
 document.addEventListener('pointerup', unpeek);
 document.addEventListener('pointercancel', unpeek);
-/* edge swipe back */
+/* edge swipe back: follows the finger, then eases out with the same curve iOS uses, based on distance and speed */
 (function () {
-  var drag = null;
+  var drag = null, EASE = 'cubic-bezier(.32,.72,0,1)';
   document.addEventListener('pointerdown', function (e) {
     var ed = e.target.closest && e.target.closest('#edge');
     if (!ed || (stk().length < 2 && cp().p !== 'form')) return;
     var el = document.querySelector('.layer.topl'); if (!el) return;
-    drag = { x0: e.clientX, el: el, dx: 0 }; el.style.transition = 'none';
+    var lay = document.querySelectorAll('.layer'), prev = lay.length > 1 ? lay[lay.length - 2] : null;
+    drag = { x0: e.clientX, el: el, prev: prev, dx: 0, v: 0, lx: e.clientX, lt: Date.now() };
+    el.style.transition = 'none'; if (prev) prev.style.transition = 'none';
     try { ed.setPointerCapture(e.pointerId); } catch (x) {}
   });
   document.addEventListener('pointermove', function (e) {
     if (!drag) return;
+    var now = Date.now(), dt = now - drag.lt;
     drag.dx = Math.max(0, e.clientX - drag.x0);
+    if (dt > 0) { drag.v = 0.7 * drag.v + 0.3 * ((e.clientX - drag.lx) / dt); drag.lx = e.clientX; drag.lt = now; }
     drag.el.style.transform = 'translateX(' + drag.dx + 'px)'; drag.el.style.boxShadow = '-8px 0 30px rgba(0,0,0,.25)';
+    if (drag.prev) drag.prev.style.transform = 'translateX(' + (-28 * (1 - Math.min(1, drag.dx / window.innerWidth))) + '%)';
   });
   function end() {
     if (!drag) return;
-    var el = drag.el, dx = drag.dx; drag = null;
-    el.style.transition = 'transform .25s cubic-bezier(.2,.8,.2,1)';
-    if (dx > window.innerWidth * 0.3) {
-      if (stk().length > 1) { el.style.transform = 'translateX(100%)'; setTimeout(pop, 230); }
-      else if (draftDirty()) { el.style.transform = 'translateX(0)'; sheet = true; an.s = 1; render(true); }
-      else { el.style.transform = 'translateX(100%)'; setTimeout(function () { tab = 'songs'; freshScroll = true; render(); }, 230); }
-    } else el.style.transform = 'translateX(0)';
+    var d = drag; drag = null;
+    var W = window.innerWidth, p = Math.min(1, d.dx / W), go = d.dx > W * 0.35 || (d.v > 0.5 && d.dx > 24);
+    var dur = Math.max(0.24, go ? 0.42 * (1 - p) + 0.16 : 0.42 * p + 0.16);
+    var tr = 'transform ' + dur + 's ' + EASE;
+    d.el.style.transition = tr; if (d.prev) d.prev.style.transition = tr;
+    function settle() { d.el.style.transition = ''; d.el.style.boxShadow = ''; if (d.prev) { d.prev.style.transition = ''; d.prev.style.transform = ''; } }
+    if (go) {
+      if (stk().length > 1) { d.el.style.transform = 'translateX(100%)'; if (d.prev) d.prev.style.transform = 'translateX(0)'; setTimeout(pop, dur * 1000 + 20); }
+      else if (draftDirty()) { d.el.style.transform = 'translateX(0)'; sheet = true; an.s = 1; setTimeout(function () { settle(); render(true); }, dur * 1000 + 20); }
+      else { d.el.style.transform = 'translateX(100%)'; setTimeout(function () { tab = 'songs'; freshScroll = true; render(); }, dur * 1000 + 20); }
+    } else {
+      d.el.style.transform = 'translateX(0)'; if (d.prev) d.prev.style.transform = 'translateX(-28%)';
+      setTimeout(settle, dur * 1000 + 20);
+    }
   }
   document.addEventListener('pointerup', end);
   document.addEventListener('pointercancel', end);
