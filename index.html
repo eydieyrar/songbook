@@ -21,7 +21,7 @@ button,input,textarea{font:inherit;color:inherit}
 .layer{position:absolute;inset:0;background:var(--bg);overflow:hidden}
 .layer.enter{animation:push .4s cubic-bezier(.32,.72,0,1)}
 @keyframes push{from{transform:translateX(100%)}to{transform:none}}
-.body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-y:none;padding:calc(var(--sat) + 52px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
+.body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 52px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
 .body::-webkit-scrollbar{display:none}
 .nav{position:absolute;left:0;right:0;top:0;z-index:20;padding:calc(var(--sat) + 4px) max(12px,env(safe-area-inset-right,0px)) 0 max(12px,env(safe-area-inset-left,0px));height:calc(var(--sat) + 64px);display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
 .nav>*{pointer-events:auto}
@@ -174,7 +174,8 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .topscrim{display:none;position:fixed;left:0;right:0;top:0;height:calc(var(--sat) * 1.2);z-index:200;pointer-events:none;background:linear-gradient(rgba(24,24,32,.62) 55%,rgba(24,24,32,0))}
 :root.ext .topscrim{display:block}
 :root.dark .topscrim{background:linear-gradient(rgba(0,0,0,.72) 55%,rgba(0,0,0,0))}
-.ptr{position:absolute;left:0;right:0;top:calc(var(--sat) + 70px);z-index:15;text-align:center;opacity:0;font-size:13px;font-weight:600;color:var(--mu);pointer-events:none;white-space:nowrap}
+.ptr{position:absolute;left:0;right:0;top:calc(var(--sat) + 52px);height:20px;z-index:15;font-size:13px;font-weight:600;color:var(--mu);pointer-events:none;white-space:nowrap;will-change:transform}
+.ptr span{position:absolute;left:0;right:0;text-align:center;opacity:0}
 .edge{position:absolute;left:0;top:0;bottom:0;width:22px;z-index:90;touch-action:none}
 @media (min-width:600px){
   .ly{padding-top:calc(var(--sat) + 120px);padding-left:56px;padding-right:56px}
@@ -200,8 +201,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.1.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.1.1';
 var CHANGES = [
+  { v: '1.1.1', d: '20 Nov 2026', t: 'Pull and recoil, as iOS does it', s: 'The pull hint travels with the page, and flicks that reach the end bounce back.', n: ['The pull-to-sync text keeps moving with the page and crossfades from Pull to Release without stopping', 'Pages that scroll use the phone\'s own momentum, so a flick that reaches the top or bottom recoils', 'Pages too short to scroll still stretch and spring back while you drag'] },
   { v: '1.1.0', d: '20 Nov 2026', t: 'Smooth transitions everywhere', s: 'Add slides in and out like every other page, and the bottom bar glides instead of popping.', n: ['New song slides in from the right, and Cancel, the back swipe and Discard all slide it out over the song list', 'The bottom bar glides in and out with the page instead of appearing suddenly', 'Pull to sync now needs a pull twice as long, and the page always springs straight back', 'Fixed stray lines that could show on lyric blocks while they changed from selected to dimmed'] },
   { v: '1.0.8', d: '20 Nov 2026', t: 'Smoother and tidier', s: 'Gentler animations, a bottom-right language button and cleaner editing.', n: ['Swipe back and every page ease out smoothly, with the page behind sliding in', 'Pages stretch and spring back when pulled past the top or bottom', 'Page titles sit just under the top buttons and are always centred', 'Show or hide languages is now a button at the bottom right; languages with no lines are dimmed', 'Lyrics scroll 100px past the last line', 'Edit is a round pen button on the lyrics page', 'Edit page: round check button and a soft title bar', 'Line editor: comment icon for notes (dim until there is a note), empty fields are truly blank, centred move and clear icons, buttons only work on filled fields, notes are italic', 'Delete song stands alone at the bottom of the editor; the language menu closes as smoothly as it opens', 'Song list: dot and arrow line up', 'RO and EN row labels are dimmed; only a missing line lights its label orange'] },
   { v: '1.0.7', d: '19 Nov 2026', t: 'Your brackets, your choice', s: 'You decide which bracket types are dropped when you paste lyrics.', n: ['Pull down on the song list to sync (the hint fades in as you pull)', 'Pasting recognises section markers by itself: names like [Verse 1] or サビ, and bracketed labels that open a stanza; (oohs) and (x2) are kept', 'The app no longer creates a sample song; a new device shows how to get your songs (Sync) instead', 'Removed the status bar setting that caused the empty strips at the top and bottom (re-add the app once)'] },
@@ -493,7 +495,7 @@ function searchLinks(s, k) {
 
 /* ---------- pages ---------- */
 function listP() {
-  var h = '<div class="ptr" id="ptr"></div>' + navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
+  var h = '<div class="ptr" id="ptr"><span id="pa">Pull to sync</span><span id="pb">Release to sync</span></div>' + navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
     '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><span class="fw' + (query ? ' has' : '') + '"><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></label>';
   var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist).toLowerCase().indexOf(q) >= 0; });
   if (!db.songs.length) h += '<div class="grp"><div class="empty">' + (cfg ? 'No songs yet. Pull down to sync, or tap Add to create one.' : 'No songs yet. Turn on Sync in Settings (the gear) to bring your songs here, or tap Add to create one.') + '</div></div>';
@@ -901,47 +903,68 @@ document.addEventListener('input', function (e) {
     if (t.getAttribute('data-c') === 'note') { var nc = t.closest('.cell'); if (nc) nc.classList.toggle('empty', !t.value.trim()); }
   }
 });
-/* every page eases like iOS: dragging past the top or bottom stretches the page and it springs back; on the song list a long pull also syncs */
+/* Pull physics.
+   Pages that scroll use the phone's own momentum and bounce (so a fling that reaches the end recoils).
+   Pages too short to scroll get a stretch-and-spring of their own while the finger is down.
+   On the song list the hint travels with the page: it fades in, then crossfades to "Release to sync" without ever stopping. */
 (function () {
-  var st = null, busy = false, EASE = 'cubic-bezier(.32,.72,0,1)';
+  var st = null, touching = false, busy = false, nativeMax = 0, hintOn = false, EASE = 'cubic-bezier(.32,.72,0,1)';
+  var T1 = 64, T2 = 80; /* page displacement where "Pull" is fully visible, and where "Release" takes over */
   function rb(d) { return 150 * (1 - Math.exp(-d / 260)); }
-  function hint(txt, prog) {
-    var el = document.getElementById('ptr'); if (!el) return;
-    el.textContent = txt; el.style.transition = 'none';
-    el.style.opacity = String(Math.max(0, Math.min(1, prog))); el.style.transform = 'translateY(' + (-14 + 14 * Math.min(1, prog)) + 'px)';
+  function listPage() { return !!db && stk().length === 1 && cp().p === 'list'; }
+  function setHint(d, ms, text) {
+    var el = document.getElementById('ptr'), a = document.getElementById('pa'), b = document.getElementById('pb');
+    if (!el || !a || !b) return;
+    el.style.transition = ms ? 'transform ' + ms + 'ms ' + EASE : 'none';
+    el.style.transform = 'translateY(' + (d - 26) + 'px)';
+    var x = d <= T1 ? 0 : Math.min(1, (d - T1) / (T2 - T1));
+    var fa = d <= T1 ? Math.max(0, d / T1) : 1 - x;
+    a.style.transition = b.style.transition = ms ? 'opacity ' + Math.min(ms, 300) + 'ms' : 'none';
+    a.style.opacity = String(fa); b.style.opacity = String(x);
+    if (text) b.textContent = text;
+    hintOn = d > 0;
   }
-  function hideHint() {
-    var el = document.getElementById('ptr'); if (!el) return;
-    el.style.transition = 'opacity .25s, transform .25s'; el.style.opacity = '0'; el.style.transform = 'translateY(-14px)';
+  function resetHintText() { var b = document.getElementById('pb'); if (b) b.textContent = 'Release to sync'; }
+  function trigger() {
+    if (busy) return;
+    if (!cfg) { setHint(T2 + 4, 0, 'Sync is off. Turn it on in Settings'); setTimeout(function () { setHint(0, 400); setTimeout(resetHintText, 450); }, 1800); return; }
+    busy = true; sync().then(function () { busy = false; }, function () { busy = false; });
   }
+  /* scrollable pages: the browser bounces; we read how far it has stretched and keep the hint attached */
+  document.addEventListener('scroll', function (e) {
+    var b = e.target;
+    if (!b || !b.classList || !b.classList.contains('body') || !listPage()) return;
+    var d = Math.max(0, -b.scrollTop);
+    if (d > 0) { nativeMax = Math.max(nativeMax, d); setHint(d, 0); }
+    else if (hintOn && !touching) { setHint(0, 0); }
+  }, true);
   document.addEventListener('touchstart', function (e) {
-    st = null;
+    st = null; touching = true; nativeMax = 0;
     if (!db || !e.target.closest || e.target.closest('#edge') || !e.target.closest('.layer.topl .body')) return;
     var b = document.querySelector('.layer.topl .body'); if (!b) return;
-    st = { y: e.touches[0].clientY, b: b, top: b.scrollTop <= 0, bot: b.scrollTop + b.clientHeight >= b.scrollHeight - 1, mode: null, dy: 0 };
+    st = { y: e.touches[0].clientY, b: b, short: b.scrollHeight <= b.clientHeight + 1, top: b.scrollTop <= 0, bot: b.scrollTop + b.clientHeight >= b.scrollHeight - 1, mode: null, d: 0 };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
-    if (!st) return;
-    var dy = e.touches[0].clientY - st.y; st.dy = dy;
+    if (!st || !st.short) return;
+    var dy = e.touches[0].clientY - st.y;
     if (!st.mode) { if (dy > 6 && st.top) st.mode = 'down'; else if (dy < -6 && st.bot) st.mode = 'up'; else if (Math.abs(dy) > 6) st.mode = 'none'; }
-    if (st.mode === 'down') {
-      st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + rb(dy) + 'px)';
-      if (cp().p === 'list' && stk().length === 1) hint(dy >= 200 ? 'Release to sync' : 'Pull to sync', dy / 200);
-    } else if (st.mode === 'up') { st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + (-rb(-dy)) + 'px)'; }
+    if (st.mode === 'down') { st.d = rb(dy); st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + st.d + 'px)'; if (listPage()) setHint(st.d, 0); }
+    else if (st.mode === 'up') { st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + (-rb(-dy)) + 'px)'; }
   }, { passive: true });
   function end() {
-    if (!st) return;
+    touching = false;
     var s = st; st = null;
-    if (s.mode === 'down' || s.mode === 'up') {
+    var go = false;
+    if (s && s.short && (s.mode === 'down' || s.mode === 'up')) {
       s.b.style.transition = 'transform .55s ' + EASE; s.b.style.transform = 'translateY(0)';
       setTimeout(function () { s.b.style.transition = ''; s.b.style.transform = ''; }, 580);
+      if (s.mode === 'down' && listPage()) { go = s.d >= T2; setHint(0, 550); }
+    } else if (listPage() && nativeMax > 0) {
+      go = nativeMax >= T2;
+      if (!(document.querySelector('.layer.topl .body').scrollTop < 0)) setHint(0, 300);
     }
-    var go = s.mode === 'down' && s.dy >= 200 && cp().p === 'list' && stk().length === 1;
-    if (!go) { if (s.mode !== 'down') hideHint(); else hideHint(); return; }
-    if (busy) { hideHint(); return; }
-    if (!cfg) { hint('Sync is off. Turn it on in Settings', 1); setTimeout(hideHint, 1800); return; }
-    busy = true; hint('Syncing…', 1);
-    sync().then(function () { hint(syncMsg || 'Done', 1); setTimeout(hideHint, 900); busy = false; }, function () { hideHint(); busy = false; });
+    nativeMax = 0;
+    if (go) trigger();
   }
   document.addEventListener('touchend', end);
   document.addEventListener('touchcancel', end);
