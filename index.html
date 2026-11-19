@@ -44,6 +44,10 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .xc::after{content:'';position:absolute;inset:-12px}
 .fw.ta .xc{margin-top:2px}
 .fw.has .xc{display:flex}
+.xp{display:none;position:absolute;top:2px;right:0;width:28px;height:28px;border:0;padding:0;border-radius:50%;background:var(--field);color:#ff453a;align-items:center;justify-content:center}
+.xp::after{content:'';position:absolute;inset:-8px}
+.fw.has .xp{display:flex}
+.fw.ta textarea{padding-right:36px}
 .grp{background:var(--card);border-radius:20px;overflow:hidden;margin:0 0 18px}
 .row{display:flex;align-items:center;gap:12px;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer;min-height:58px}
 .row:last-child{border-bottom:0}
@@ -163,6 +167,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .sheet.out{animation:sheetout .2s ease-in forwards}
 .sheet button{border:0;font-size:17px;font-weight:600;padding:15px;border-radius:24px;background:var(--glassb)}
 .sheet button.red{color:#ff453a}
+.sheetnote{padding:12px 14px 6px;text-align:center;font-size:13px;color:var(--mu);line-height:1.4}
 .pill,.sbtn,.tab,.grpbar button,.xround{position:relative}
 .pill::after,.sbtn::after,.xround::after{content:'';position:absolute;inset:-8px}
 .pill.round::after{inset:-10px}
@@ -201,8 +206,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.1.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.2.0';
 var CHANGES = [
+  { v: '1.2.0', d: '20 Nov 2026', t: 'Keep your pasted lyrics', s: 'Pasted text stays in its box so you can edit it and apply again.', n: ['Pasted Japanese, romaji and English text is kept with the song after you apply it', 'A red round × in the corner of each paste box clears it', 'Clearing asks first, with a sheet that slides up'] },
   { v: '1.1.1', d: '20 Nov 2026', t: 'Pull and recoil, as iOS does it', s: 'The pull hint travels with the page, and flicks that reach the end bounce back.', n: ['The pull-to-sync text keeps moving with the page and crossfades from Pull to Release without stopping', 'Pages that scroll use the phone\'s own momentum, so a flick that reaches the top or bottom recoils', 'Pages too short to scroll still stretch and spring back while you drag'] },
   { v: '1.1.0', d: '20 Nov 2026', t: 'Smooth transitions everywhere', s: 'Add slides in and out like every other page, and the bottom bar glides instead of popping.', n: ['New song slides in from the right, and Cancel, the back swipe and Discard all slide it out over the song list', 'The bottom bar glides in and out with the page instead of appearing suddenly', 'Pull to sync now needs a pull twice as long, and the page always springs straight back', 'Fixed stray lines that could show on lyric blocks while they changed from selected to dimmed'] },
   { v: '1.0.8', d: '20 Nov 2026', t: 'Smoother and tidier', s: 'Gentler animations, a bottom-right language button and cleaner editing.', n: ['Swipe back and every page ease out smoothly, with the page behind sliding in', 'Pages stretch and spring back when pulled past the top or bottom', 'Page titles sit just under the top buttons and are always centred', 'Show or hide languages is now a button at the bottom right; languages with no lines are dimmed', 'Lyrics scroll 100px past the last line', 'Edit is a round pen button on the lyrics page', 'Edit page: round check button and a soft title bar', 'Line editor: comment icon for notes (dim until there is a note), empty fields are truly blank, centred move and clear icons, buttons only work on filled fields, notes are italic', 'Delete song stands alone at the bottom of the editor; the language menu closes as smoothly as it opens', 'Song list: dot and arrow line up', 'RO and EN row labels are dimmed; only a missing line lights its label orange'] },
@@ -221,7 +227,7 @@ var CHANGES = [
 ];
 var db = null, status = '';
 var tab = 'songs', stacks = { songs: [{ p: 'list' }], add: [{ p: 'form' }] };
-var draft = null, pasteBuf = { jp: '', ro: '', en: '' }, spotBuf = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
+var draft = null, sheetKind = 'discard', sheetArg = '', spotBuf = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
 var pushing = false, freshScroll = true, an = { v: 0, m: 0, s: 0 };
 var KS = [0.85, 1, 1.15, 1.3], KN = ['Small', 'Default', 'Large', 'Extra large'], KL = ['S', 'M', 'L', 'XL'];
 var app = document.getElementById('app');
@@ -244,6 +250,7 @@ function normSong(s) {
   s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
   s.artist = s.artist || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
   s.lines.forEach(function (l) { l.ro = l.ro || ''; l.jp = l.jp || ''; l.en = l.en || ''; l.note = l.note || ''; });
+  s.paste = s.paste || {}; s.paste.jp = s.paste.jp || ''; s.paste.ro = s.paste.ro || ''; s.paste.en = s.paste.en || '';
   s.cover = s.cover || ''; s.src = s.src || {}; s.src.jp = s.src.jp || ''; s.src.ro = s.src.ro || ''; s.src.en = s.src.en || '';
   s.sha = s.sha || ''; s.dirty = !!s.dirty; s.updated = +s.updated || 0;
   return s;
@@ -367,7 +374,7 @@ function api(method, path, body) {
     return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { status: r.status, json: j }; });
   });
 }
-function pack(s) { return { id: s.id, title: s.title, artist: s.artist, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, updated: s.updated }; }
+function pack(s) { return { id: s.id, title: s.title, artist: s.artist, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
 function findSong(id) { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === id) return i; return -1; }
 function fetchSong(id) {
   return api('GET', '/contents/songs/' + id + '.json').then(function (r) {
@@ -594,7 +601,7 @@ function formP() {
   h += '<div class="sec">Lyric sources</div>';
   [['jp', 'Japanese'], ['ro', 'Romaji'], ['en', 'English']].forEach(function (r) {
     var k = r[0];
-    h += '<div class="grp"><div class="fld"><label>' + r[1] + ' lyrics (paste here)</label><span class="fw ta' + (pasteBuf[k] ? ' has' : '') + '"><textarea data-p="' + k + '" placeholder="Paste ' + r[1].toLowerCase() + ' lyrics, one line per line">' + esc(pasteBuf[k]) + '</textarea><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
+    h += '<div class="grp"><div class="fld"><label>' + r[1] + ' lyrics (paste here)</label><span class="fw ta' + (s.paste[k] ? ' has' : '') + '"><textarea data-p="' + k + '" placeholder="Paste ' + r[1].toLowerCase() + ' lyrics, one line per line">' + esc(s.paste[k]) + '</textarea><button class="xp" data-act="clrpaste" data-k="' + k + '" aria-label="Clear pasted lyrics"><svg width="11" height="11" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button></span></div>' +
       '<div class="fld"><label>Source link (optional, for your reference)</label><span class="fw' + (s.src[k] ? ' has' : '') + '"><input data-s="' + k + '" value="' + esc(s.src[k]) + '" placeholder="https://…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
       '<div class="btnrow"><button class="sbtn" data-act="menu" data-k="' + k + '">Search for ' + r[1] + ' ▾</button></div>' +
       (menuOpen === k ? '<div class="menu glass' + (an.m ? ' in' : '') + '">' + searchLinks(s, k).map(function (l) { return '<a href="' + l[1] + '" target="_blank" rel="noopener">' + l[0] + '<span>↗</span></a>'; }).join('') + '</div>' : '') + '</div>';
@@ -657,6 +664,13 @@ function centre(smooth) {
   if (smooth && sc.scrollTo) { try { sc.scrollTo({ top: t, behavior: 'smooth' }); return; } catch (e) {} }
   sc.scrollTop = t;
 }
+function sheetHTML() {
+  var cls = an.s ? ' in' : '';
+  var body = sheetKind === 'clearpaste'
+    ? '<div class="sheetnote">Clear the pasted ' + ({ jp: 'Japanese', ro: 'romaji', en: 'English' })[sheetArg] + ' lyrics? Lines already in the list stay as they are.</div><button class="red" data-act="doclrpaste">Clear pasted lyrics</button><button data-act="keep">Cancel</button>'
+    : '<button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button>';
+  return '<div class="scrim' + cls + '" data-act="keep"></div><div class="sheet glass' + cls + '">' + body + '</div>';
+}
 function scaffold() {
   if (document.getElementById('stage')) return;
   app.innerHTML = '<div id="status" class="err" style="position:absolute;left:12px;right:12px;top:70px;z-index:80;display:none"></div><div id="stage"></div>' +
@@ -680,7 +694,7 @@ function render(keep) {
   document.getElementById('stage').innerHTML = h;
   document.getElementById('tabs').classList.toggle('hide', !(st.length === 1 && cp().p === 'list'));
   var se = document.getElementById('status'); se.textContent = status; se.style.display = status ? 'block' : 'none';
-  document.getElementById('over').innerHTML = sheet ? '<div class="scrim' + (an.s ? ' in' : '') + '" data-act="keep"></div><div class="sheet glass' + (an.s ? ' in' : '') + '"><button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button></div>' : '';
+  document.getElementById('over').innerHTML = sheet ? sheetHTML() : '';
   pushing = false; an = { v: 0, m: 0, s: 0 };
   var nb = document.querySelector('.layer.topl .body');
   if (nb) nb.scrollTop = (keep && !freshScroll) ? top : 0;
@@ -766,8 +780,8 @@ function findCovers(s) {
     });
   }).catch(function () { coverMsg = 'Could not reach the cover catalogue. Check your connection.'; render(true); });
 }
-function resetDraft() { draft = blank(); pasteBuf = { jp: '', ro: '', en: '' }; spotBuf = ''; covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
-function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.notes || s.cover || s.lines.length || pasteBuf.jp || pasteBuf.ro || pasteBuf.en)); }
+function resetDraft() { draft = blank(); spotBuf = ''; covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
+function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
 /* ---------- events ---------- */
@@ -809,6 +823,11 @@ document.addEventListener('click', function (e) {
   if (act === 'size') { db.ui.sz = +k; save(); render(true); return; }
   if (act === 'menu') { if (menuOpen === k) closeAnim('.menu', function () { menuOpen = null; render(true); }); else { menuOpen = k; an.m = 1; render(true); } return; }
   s = fs();
+  if (act === 'clrpaste') { sheet = true; sheetKind = 'clearpaste'; sheetArg = k; an.s = 1; render(true); return; }
+  if (act === 'doclrpaste') {
+    closeAnim('.sheet,.scrim', function () { sheet = false; var ps = fs(); if (ps) { ps.paste[sheetArg] = ''; touch(ps); if (ps !== draft) save(); } render(true); });
+    return;
+  }
   if (act === 'covers') { if (s) findCovers(s); return; }
   if (act === 'cover') { if (s && covers[i]) { s.cover = covers[i].u; touch(s); if (s !== draft) save(); render(true); } return; }
   if (act === 'nocover') { if (s) { s.cover = ''; touch(s); if (s !== draft) save(); render(true); } return; }
@@ -816,12 +835,11 @@ document.addEventListener('click', function (e) {
     if (!s) return;
     var any = false;
     ['jp', 'ro', 'en'].forEach(function (c) {
-      var arr = splitLines(pasteBuf[c]);
+      var arr = splitLines(s.paste[c]);
       if (!arr.length) return;
       any = true;
       while (s.lines.length < arr.length) s.lines.push(blankLine());
       arr.forEach(function (txt, n) { s.lines[n][c] = txt; });
-      pasteBuf[c] = '';
     });
     if (any) { touch(s); if (s !== draft) save(); }
     render(true); return;
@@ -843,7 +861,7 @@ document.addEventListener('click', function (e) {
     } else popAnim();
     return;
   }
-  if (act === 'cancel') { if (draftDirty()) { sheet = true; an.s = 1; render(true); } else popAnim(); return; }
+  if (act === 'cancel') { if (draftDirty()) { sheet = true; sheetKind = 'discard'; an.s = 1; render(true); } else popAnim(); return; }
   if (act === 'keep') { closeAnim('.sheet,.scrim', function () { sheet = false; render(true); }); return; }
   if (act === 'discard') { closeAnim('.sheet,.scrim', function () { sheet = false; var o = document.getElementById('over'); if (o) o.innerHTML = ''; popAnim(); }); return; }
   if (act === 'del') {
@@ -892,7 +910,7 @@ document.addEventListener('input', function (e) {
   if (t.id === 'spot') { spotBuf = t.value; return; }
   if (t.id === 'q') { query = t.value; var pos = t.selectionStart; render(true); var q2 = document.getElementById('q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (x) {} } return; }
   var s = fs();
-  if (t.hasAttribute('data-p')) { pasteBuf[t.getAttribute('data-p')] = t.value; return; }
+  if (t.hasAttribute('data-p')) { var ps = fs(); if (ps) { ps.paste[t.getAttribute('data-p')] = t.value; touch(ps); if (ps !== draft) save(); } return; }
   if (!s) return;
   if (t.hasAttribute('data-f')) {
     setPath(s, t.getAttribute('data-f'), t.value); touch(s); if (s !== draft) save();
@@ -1010,7 +1028,7 @@ document.addEventListener('pointercancel', unpeek);
     if (go) {
       if (cp().p === 'form' && draftDirty()) {
         d.el.style.transform = 'translateX(0)'; if (d.prev) d.prev.style.transform = 'translateX(-28%)';
-        sheet = true; an.s = 1; setTimeout(function () { settle(); render(true); }, dur * 1000 + 20);
+        sheet = true; sheetKind = 'discard'; an.s = 1; setTimeout(function () { settle(); render(true); }, dur * 1000 + 20);
       } else {
         if (stk().length === 2 && stk()[0].p === 'list') document.getElementById('tabs').classList.remove('hide');
         d.el.style.transform = 'translateX(100%)'; if (d.prev) d.prev.style.transform = 'translateX(0)'; setTimeout(pop, dur * 1000 + 20);
