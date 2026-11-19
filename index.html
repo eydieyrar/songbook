@@ -154,7 +154,8 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 .srch{position:relative}
 .srch::after{content:'';position:absolute;inset:-8px -4px}
 .xround{width:38px;height:38px;border-radius:50%;border:0;background:var(--field);color:#ff453a;display:flex;align-items:center;justify-content:center;padding:0}
-.topscrim{position:fixed;left:0;right:0;top:0;height:calc(var(--sat) * 1.2);z-index:200;pointer-events:none;background:linear-gradient(rgba(24,24,32,.62) 55%,rgba(24,24,32,0))}
+.topscrim{display:none;position:fixed;left:0;right:0;top:0;height:calc(var(--sat) * 1.2);z-index:200;pointer-events:none;background:linear-gradient(rgba(24,24,32,.62) 55%,rgba(24,24,32,0))}
+:root.ext .topscrim{display:block}
 :root.dark .topscrim{background:linear-gradient(rgba(0,0,0,.72) 55%,rgba(0,0,0,0))}
 .edge{position:absolute;left:0;top:0;bottom:0;width:22px;z-index:90;touch-action:none}
 @media (min-width:600px){
@@ -181,8 +182,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:22px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.5';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.0.6';
 var CHANGES = [
+  { v: '1.0.6', d: '19 Nov 2026', t: 'No stray shadow at the top', s: 'The soft band under the status bar now appears only when the page runs behind it.', n: ['Removed the shadow under the status bar on installs where the page sits below it', 'Songs that were never uploaded are now sent to GitHub on the next sync'] },
   { v: '1.0.5', d: '19 Nov 2026', t: 'Swipe out of New song', s: 'The New song page now works with the edge swipe too.', n: ['Lyrics page top buttons use exactly the same spacing as every other page', 'Swipe from the left edge to leave New song', 'If you have typed anything, it asks Discard or Keep editing first'] },
   { v: '1.0.4', d: '19 Nov 2026', t: 'New song, no bottom bar', s: 'You can no longer leave a new song by accident.', n: ['The page now fills behind the status bar and notch (re-add the app to the Home Screen to see it)', 'The bottom bar is hidden on the New song page','Cancel is the only way out, and it asks before discarding', 'Bigger tap area above the bottom bar'] },
   { v: '1.0.3', d: '19 Nov 2026', t: 'Touch and alignment', s: 'Easier tapping and tidier top bars.', n: ['Top buttons sit at the same height on every page', 'Ready to fill the area behind the status bar', 'Top bar title lines up with its buttons', 'Top buttons moved up to sit just under the status bar', 'Bigger tap areas around buttons, tabs and the search bar', 'Remove cover is now a small round × button'] },
@@ -294,12 +296,21 @@ function boot() {
   });
 }
 
+/* ---------- does the page run behind the status bar? ---------- */
+function checkExt() {
+  var full = window.innerHeight >= (window.screen.height - 12) && (window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches));
+  document.documentElement.classList.toggle('ext', !!full);
+}
+checkExt();
+window.addEventListener('resize', checkExt);
+window.addEventListener('orientationchange', checkExt);
+
 /* ---------- theme ---------- */
 var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 function applyTheme() {
   var t = db ? db.ui.theme : 'system';
   var dk = t === 'dark' || (t === 'system' && mq && mq.matches);
-  document.documentElement.className = dk ? 'dark' : '';
+  document.documentElement.classList.toggle('dark', dk);
   var m = document.getElementById('themecolor'); if (m) m.setAttribute('content', dk ? '#000000' : '#f2f2f7');
 }
 if (mq && mq.addEventListener) mq.addEventListener('change', applyTheme);
@@ -351,6 +362,11 @@ function touch(s) { s.dirty = true; s.updated = Date.now(); if (s !== draft) syn
 function editing() { var p = cp().p; return p === 'edit' || p === 'form'; }
 function sync() {
   if (!cfg || syncing || !db) return Promise.resolve();
+  /* a song that was never uploaded must not stay local-only: mark it to be sent (except the built-in sample) */
+  db.songs.forEach(function (s) {
+    var isSample = s.title.jp === 'サンプル' && s.artist === 'Example Artist' && s.lines.length <= 1;
+    if (!s.sha && !s.dirty && !isSample) { s.dirty = true; s.updated = s.updated || Date.now(); }
+  });
   syncing = true; setSync('Syncing…');
   var changed = false, remote = {};
   function chain(fns) { return fns.reduce(function (p, f) { return p.then(f); }, Promise.resolve()); }
