@@ -255,8 +255,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.6.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.7.0';
 var CHANGES = [
+  { v: '1.7.0', d: '22 Nov 2026', t: 'One link per song', s: 'A song now has one link, Spotify or UtaTime, shared by the cover finder and saved with the song.', n: ['New Song link field at the top of the details, saved and synced with the song', 'Find covers uses that link, along with the title and artist'] },
   { v: '1.6.0', d: '22 Nov 2026', t: 'Collapsing translations', s: 'Hiding the translation now folds the line away, romaji blurs when hidden, and Japanese can no longer be hidden.', n: ['Settings: choose how hidden romaji looks, Blur or Glow, as a light hint or a strong hide', 'Hiding the translation closes its row and the lines move up; showing it opens each row downward from the Japanese line', 'Hidden romaji is blurred and keeps its place', 'The language menu no longer has Japanese, so it is always shown', 'Home fades the panel into the page colours instead of ending grey then black', 'A second finger during a panel drag no longer freezes the panel halfway'] },
   { v: '1.5.1', d: '21 Nov 2026', t: 'Panel polish', s: 'Sideways panel drags lock the scroll, the eye menu no longer closes the panel, and Home settles smoothly.', n: ['Dragging the panel sideways no longer scrolls it up or down', 'The eye menu and its button leave the panel open', 'Home animation: the title, search and buttons glide to their places on the Songs page, so nothing jumps at the end'] },
   { v: '1.5.0', d: '21 Nov 2026', t: 'Panel you can drag', s: 'The iPad song panel floats over the lyrics without moving them and follows your finger to open and close.', n: ['The song panel floats over the lyrics; the lyrics no longer move or re-wrap when it opens', 'Drag the panel open from the left edge, and drag it closed from the panel, the cover area or empty space', 'Going back from New song or Edit no longer shows a black page or reopens the panel', 'Lighter Home animation'] },
@@ -282,7 +283,7 @@ var CHANGES = [
 ];
 var db = null, status = '';
 var tab = 'songs', stacks = { songs: [{ p: 'list' }], add: [{ p: 'form' }] };
-var draft = null, sheetKind = 'discard', sheetArg = '', spotBuf = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
+var draft = null, sheetKind = 'discard', sheetArg = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
 var pushing = false, freshScroll = true, an = { v: 0, m: 0, s: 0 };
 var KS = [0.85, 1, 1.15, 1.3], KN = ['Small', 'Default', 'Large', 'Extra large'], KL = ['S', 'M', 'L', 'XL'];
 var app = document.getElementById('app');
@@ -290,7 +291,7 @@ var app = document.getElementById('app');
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 function blankLine() { return { ro: '', jp: '', en: '', note: '' }; }
-function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', notes: '', lines: [] }); }
+function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', link: '', notes: '', lines: [] }); }
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
   d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light';
@@ -303,7 +304,7 @@ function norm(d) {
 }
 function normSong(s) {
   s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
-  s.artist = s.artist || ''; s.artistRo = s.artistRo || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
+  s.artist = s.artist || ''; s.artistRo = s.artistRo || ''; s.link = s.link || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
   s.lines.forEach(function (l) { l.ro = l.ro || ''; l.jp = l.jp || ''; l.en = l.en || ''; l.note = l.note || ''; });
   s.paste = s.paste || {}; s.paste.jp = s.paste.jp || ''; s.paste.ro = s.paste.ro || ''; s.paste.en = s.paste.en || '';
   s.cover = s.cover || ''; s.src = s.src || {}; s.src.jp = s.src.jp || ''; s.src.ro = s.src.ro || ''; s.src.en = s.src.en || '';
@@ -441,7 +442,7 @@ function api(method, path, body) {
     return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { status: r.status, json: j }; });
   });
 }
-function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
+function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, link: s.link, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
 function findSong(id) { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === id) return i; return -1; }
 function fetchSong(id) {
   return api('GET', '/contents/songs/' + id + '.json').then(function (r) {
@@ -672,14 +673,14 @@ function formP() {
   var dis = (nw && !s.title.jp.trim() && !s.title.en.trim()) ? ' dis' : '';
   var save = nw ? '<button class="pill pri' + dis + '" data-act="save" id="savebtn">Save</button>' : '<button class="pill round pri" data-act="save" id="savebtn" aria-label="Done">' + CHECK + '</button>';
   var h = navBar(nw ? '<button class="pill glass" data-act="cancel">Cancel</button>' : backBtn(), nw ? 'New song' : 'Edit song', save) + '<div class="body fbody"><div class="fcol"><div class="sec">Details</div><div class="grp">' +
+    '<div class="fld"><label>Song link · Spotify or UtaTime (one link for this song)</label><span class="fw' + (s.link ? ' has' : '') + '"><input data-f="link" value="' + esc(s.link) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
     '<div class="fld"><label>Title (Japanese)</label><input data-f="title.jp" value="' + esc(s.title.jp) + '" placeholder="Required"></div>' +
     '<div class="fld"><label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '"></div>' +
     '<div class="fld"><label>Title (English)</label><input data-f="title.en" value="' + esc(s.title.en) + '"></div>' +
     '<div class="fld"><label>Artist (kanji)</label><input data-f="artist" value="' + esc(s.artist) + '"></div>' +
     '<div class="fld"><label>Artist (romaji)</label><input data-f="artistRo" value="' + esc(s.artistRo) + '"></div>' +
     '<div class="fld"><label>Notes (shown at the end of the song)</label><textarea data-f="notes" style="min-height:60px">' + esc(s.notes) + '</textarea></div></div>';
-  h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the title and artist above') + '</small></div></div>' +
-    '<div class="fld"><label>Spotify link (optional)</label><span class="fw' + (spotBuf ? ' has' : '') + '"><input id="spot" value="' + esc(spotBuf) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
+  h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the song link, title and artist') + '</small></div></div>' +
     '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="xround" data-act="nocover" aria-label="Remove cover"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
     (covers.length ? '<div class="covers">' + covers.map(function (c, i) { return '<div class="cv' + (s.cover === c.u ? ' sel' : '') + '" data-act="cover" data-i="' + i + '"><i><img src="' + esc(c.u) + '" alt=""></i>' + esc(c.l) + '</div>'; }).join('') + '</div>' : '') + '</div>';
   h += '<div class="sec">Lyric sources</div>';
@@ -905,7 +906,7 @@ function download(name, text) {
   setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 function findCovers(s) {
-  var link = (document.getElementById('spot') || {}).value || '', jobs = [], extra = [];
+  var link = s.link || '', jobs = [], extra = [];
   if (/open\.spotify\.com\//.test(link)) {
     jobs.push(fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(link.trim())).then(function (r) { return r.json(); }).then(function (j) {
       if (j && j.title && !s.title.jp && !s.title.en) { s.title.jp = j.title; touch(s); }
@@ -928,8 +929,8 @@ function findCovers(s) {
     });
   }).catch(function () { coverMsg = 'Could not reach the cover catalogue. Check your connection.'; render(true); });
 }
-function resetDraft() { draft = blank(); spotBuf = ''; covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
-function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
+function resetDraft() { draft = blank(); covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
+function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.link || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
 /* ---------- events ---------- */
@@ -1121,7 +1122,6 @@ document.addEventListener('click', function (e) {
 document.addEventListener('input', function (e) {
   var t = e.target; if (!db) return;
   var fw = t.closest && t.closest('.fw'); if (fw) fw.classList.toggle('has', !!t.value);
-  if (t.id === 'spot') { spotBuf = t.value; return; }
   if (t.id === 'q') { query = t.value; var pos = t.selectionStart; render(true); var q2 = document.getElementById('q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (x) {} } return; }
   var s = fs();
   if (t.hasAttribute('data-p')) { var ps = fs(); if (ps) { ps.paste[t.getAttribute('data-p')] = t.value; touch(ps); if (ps !== draft) save(); } return; }
