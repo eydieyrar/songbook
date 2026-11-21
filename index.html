@@ -145,7 +145,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 :root[data-rs=blur][data-rl=strong] .al .ro.hid,:root[data-rs=blur][data-rl=strong] .rhp.hid{filter:blur(6.5px);opacity:.62}
 :root[data-rs=glow][data-rl=light] .al .ro.hid,:root[data-rs=glow][data-rl=light] .rhp.hid{color:transparent!important;text-shadow:0 0 .55em rgba(255,255,255,.8),0 0 1.1em rgba(255,255,255,.25)}
 :root[data-rs=glow][data-rl=strong] .al .ro.hid,:root[data-rs=glow][data-rl=strong] .rhp.hid{color:transparent!important;text-shadow:0 0 .9em rgba(255,255,255,.5),0 0 1.5em rgba(255,255,255,.15)}
-.rhbox{margin:10px 0 0;padding:14px 16px;border-radius:16px;background:#14161a;color:#fff}.rhbox .rhp{display:block;font-size:15px;color:rgba(255,255,255,.78)}.rhbox .rj{font-size:22px;font-weight:800;margin-top:3px}
+.rhbox{margin:6px 0 0;padding:16px 18px 12px;border-radius:18px;background:#14161a;color:#fff}.rhbox .rb{margin:0 0 16px}.rhbox .rhp{display:block;font-size:calc(12.5px*var(--k,1));color:rgba(255,255,255,.72)}.rhbox .rj{font-size:calc(27px*var(--k,1));font-weight:800;line-height:1.28;margin:3px 0}.rhbox .rk{display:block;font-size:calc(14px*var(--k,1));color:rgba(255,255,255,.75)}.rhbox .rn{font-size:11px;color:rgba(255,255,255,.4);margin-top:-4px}
 .al .enw{display:grid;grid-template-rows:1fr;transition:grid-template-rows .5s cubic-bezier(.32,.72,0,1),opacity .4s ease}
 .al .enw>.en{min-height:0;overflow:hidden;display:block;margin:0}
 .al .enw.hid{grid-template-rows:0fr;opacity:0}
@@ -255,8 +255,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.7.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.7.1';
 var CHANGES = [
+  { v: '1.7.1', d: '22 Nov 2026', t: 'Tidier settings', s: 'One preview in Settings shows both the text size and the hidden romaji style.', n: ['Settings: the two samples are now one preview with three lines, so text size and hidden romaji can be tuned together'] },
   { v: '1.7.0', d: '22 Nov 2026', t: 'One link per song', s: 'A song now has one link, Spotify or UtaTime, shared by the cover finder and saved with the song.', n: ['New Song link field at the top of the details, saved and synced with the song', 'Find covers uses that link, along with the title and artist'] },
   { v: '1.6.0', d: '22 Nov 2026', t: 'Collapsing translations', s: 'Hiding the translation now folds the line away, romaji blurs when hidden, and Japanese can no longer be hidden.', n: ['Settings: choose how hidden romaji looks, Blur or Glow, as a light hint or a strong hide', 'Hiding the translation closes its row and the lines move up; showing it opens each row downward from the Japanese line', 'Hidden romaji is blurred and keeps its place', 'The language menu no longer has Japanese, so it is always shown', 'Home fades the panel into the page colours instead of ending grey then black', 'A second finger during a panel drag no longer freezes the panel halfway'] },
   { v: '1.5.1', d: '21 Nov 2026', t: 'Panel polish', s: 'Sideways panel drags lock the scroll, the eye menu no longer closes the panel, and Home settles smoothly.', n: ['Dragging the panel sideways no longer scrolls it up or down', 'The eye menu and its button leave the panel open', 'Home animation: the title, search and buttons glide to their places on the Songs page, so nothing jumps at the end'] },
@@ -705,10 +706,11 @@ function setP() {
   return navBar(backBtn(), '', '<span></span>') + '<div class="body"><h1 class="lg">Settings</h1><div class="sec">Appearance</div><div class="seg solo">' +
     ['system', 'light', 'dark'].map(function (k) { return '<button data-act="theme" data-k="' + k + '" class="' + (db.ui.theme === k ? 'on' : '') + '">' + k.charAt(0).toUpperCase() + k.slice(1) + '</button>'; }).join('') + '</div>' +
     '<div class="sec">Reading · text size for all songs</div><div class="seg solo">' + KL.map(function (n, i) { return '<button data-act="size" data-k="' + i + '" class="' + (db.ui.sz === i ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div>' +
-    '<div class="grp"><div class="fld"><div style="font-weight:800;font-size:' + (22 * KS[db.ui.sz]) + 'px;line-height:1.3">夜明けの電車</div><label style="margin:4px 0 0">' + KN[db.ui.sz] + '</label></div></div>' +
     '<div class="sec">Hidden romaji · style</div><div class="seg solo">' + [['blur', 'Blur'], ['glow', 'Glow']].map(function (o) { return '<button data-act="rs" data-k="' + o[0] + '" class="' + (db.ui.rs === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
     '<div class="seg solo" style="margin-top:10px">' + [['light', 'Light hint'], ['strong', 'Strong hide']].map(function (o) { return '<button data-act="rl" data-k="' + o[0] + '" class="' + (db.ui.rl === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
-    '<div class="rhbox"><span class="rhp hid">Sample line number one</span><div class="rj">サンプルの一行目</div></div>' +
+    '<div class="sec">Preview · text size and hidden romaji</div><div class="rhbox" style="--k:' + KS[db.ui.sz] + '">' + [['Sample line number one', 'サンプルの一行目', 'The sample line number one', false], ['Another example line', '別の例の行', 'Another example line here', true], ['A short one', '短い行', 'A short one', false]].map(function (b) {
+      return '<div class="rb"><span class="rhp' + (b[3] ? ' hid' : '') + '">' + b[0] + '</span><div class="rj">' + b[1] + '</div><span class="rk">' + b[2] + '</span></div>';
+    }).join('') + '<div class="rn">Middle line: romaji hidden</div></div>' +
     '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small>' + CHEV + '</div>' +
     '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div>' + CHEV + '</div></div>' +
     '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small>' + CHEV + '</div></div></div>';
