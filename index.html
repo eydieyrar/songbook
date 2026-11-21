@@ -18,7 +18,7 @@ html,body{height:100%;background:var(--bg);color:var(--fg);font-family:-apple-sy
 #app{position:fixed;inset:0;overflow:hidden}
 button,input,textarea{font:inherit;color:inherit}
 .glass{background:var(--glass);-webkit-backdrop-filter:blur(22px) saturate(190%);backdrop-filter:blur(22px) saturate(190%);border:1px solid rgba(255,255,255,.35);box-shadow:0 8px 28px var(--sh),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(255,255,255,.08)}
-.layer{position:absolute;inset:0;background:var(--bg);overflow:hidden}
+.layer{position:absolute;inset:0;background:var(--bg);overflow:hidden;container-type:inline-size;container-name:lay}
 .layer.enter{animation:push .4s cubic-bezier(.32,.72,0,1)}
 @keyframes push{from{transform:translateX(100%)}to{transform:none}}
 .body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:calc(var(--sat) + 52px) max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 130px) max(16px,env(safe-area-inset-left,0px))}
@@ -183,22 +183,56 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .ptr span{position:absolute;left:0;right:0;text-align:center;opacity:0}
 .edge{position:absolute;left:0;top:0;bottom:0;width:22px;z-index:90;touch-action:none}
 @media (min-width:600px){
+  .body{max-width:720px;margin:0 auto;left:0;right:0}
+}
+@container lay (min-width:600px){
   .ly{padding-top:calc(var(--sat) + 120px);padding-left:56px;padding-right:56px}
   .al{margin-bottom:20px}
   .al .jp{font-size:calc(40px*var(--k,1))}.al .ro{font-size:calc(16px*var(--k,1))}.al .en{font-size:calc(19px*var(--k,1))}
-  .body{max-width:720px;margin:0 auto;left:0;right:0}
 }
-@media (min-width:900px) and (orientation:landscape){
-  .ly{padding-left:420px;padding-right:56px;padding-top:calc(var(--sat) + 80px)}
-  .al{margin-bottom:18px}
-  .al .jp{font-size:calc(38px*var(--k,1))}.al .ro{font-size:calc(15px*var(--k,1))}.al .en{font-size:calc(18px*var(--k,1))}
-  .rd .navt{visibility:hidden}
-  .cover{display:block;position:absolute;left:44px;top:calc(var(--sat) + 90px);width:300px;z-index:4}
-  .cover .art{width:300px;height:300px;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.5);font-size:130px}
-  .cover .ct{font-size:22px;font-weight:700;margin-top:22px}
-  .cover .ca{opacity:.7;margin-top:4px}
+@container lay (min-width:780px){
+  @media (min-height:560px){
+    .ly{padding-left:360px;padding-right:56px;padding-top:calc(var(--sat) + 80px)}
+    .al{margin-bottom:18px}
+    .al .jp{font-size:calc(30px*var(--k,1))}.al .ro{font-size:calc(13.5px*var(--k,1))}.al .en{font-size:calc(16px*var(--k,1))}
+    .rd .navt{visibility:hidden}
+    .cover{display:block;position:absolute;left:44px;top:calc(var(--sat) + 90px);width:260px;z-index:4}
+    .cover .art{width:260px;height:260px;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.5);font-size:112px}
+    .cover .ct{font-size:21px;font-weight:700;margin-top:20px}
+    .cover .ca{opacity:.7;margin-top:4px}
+    .fbody{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);grid-template-rows:minmax(0,1fr);gap:22px;overflow:hidden;max-width:none;margin:0;left:0;right:0;padding-bottom:0}
+    .fbody .fcol{display:block;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;min-height:0;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 60px)}
+    .fbody .fcol::-webkit-scrollbar{display:none}
+  }
 }
-</style>
+@container lay (min-width:1000px){
+  @media (min-height:560px){
+    .ly{padding-left:420px}
+    .al .jp{font-size:calc(38px*var(--k,1))}.al .ro{font-size:calc(15px*var(--k,1))}.al .en{font-size:calc(18px*var(--k,1))}
+    .cover{width:300px}.cover .art{width:300px;height:300px;font-size:130px}
+  }
+}
+.fcol{display:contents}
+/* iPad: the song list is a floating dark glass panel; pages beside it make room */
+#app.ipad .layer.panel{left:12px;top:12px;bottom:12px;right:auto;width:320px;border-radius:34px;background:rgba(24,24,28,.8);-webkit-backdrop-filter:blur(30px) saturate(180%);backdrop-filter:blur(30px) saturate(180%);border:1px solid rgba(255,255,255,.28);box-shadow:0 14px 44px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.35);z-index:40;color:#fff;--fg:#fff;--mu:#98989f;--card:rgba(255,255,255,.07);--line:rgba(84,84,88,.5);--field:rgba(118,118,128,.3);--bg:transparent;--glass:rgba(70,70,76,.5);--glassb:rgba(255,255,255,.14);transition:transform .42s cubic-bezier(.32,.72,0,1)}
+#app.ipad:not(.pOpen) .layer.panel{transform:translateX(-118%)}
+#app.ipad .layer.panel .nav{background:none;padding:16px 16px 0}
+#app.ipad .layer.panel .body{padding-top:calc(var(--sat) + 72px)}
+#app.ipad .layer:not(.panel),#app.ipad .dempty{transition:left .42s cubic-bezier(.32,.72,0,1)}
+#app.ipad.land.pOpen .layer:not(.panel),#app.ipad.land.pOpen .dempty{left:344px}
+#app.ipad #tabs{left:172px;z-index:45;--glass:rgba(70,70,76,.5);--glassb:rgba(255,255,255,.14);--mu:#98989f}
+.dempty{display:none;position:absolute;left:0;top:0;right:0;bottom:0;z-index:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--mu);font-size:17px;background:var(--bg)}
+.dempty .dcov{width:120px;height:120px;border-radius:28px;background:var(--field);display:flex;align-items:center;justify-content:center;font-size:54px;font-weight:800;color:var(--mu)}
+#app.ipad .dempty{display:flex}
+.pscrim{display:none;position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .35s ease}
+#app.ipad:not(.land) .pscrim{display:block}
+#app.ipad:not(.land).pOpen .pscrim{opacity:1;pointer-events:auto}
+#app.ipad.pm #ptr{left:12px;right:auto;width:320px}
+.fab{position:absolute;left:18px;bottom:calc(20px + env(safe-area-inset-bottom));z-index:6;width:52px;height:52px;border-radius:50%;border:1px solid var(--glassb);color:#fa2d48;font-size:30px;font-weight:300;line-height:1;display:flex;align-items:center;justify-content:center;padding:0 0 3px}
+.layer.panel .fab{left:auto;right:16px;bottom:16px}
+#app.pOpen .layer.topl [data-act=panel]{opacity:0;pointer-events:none}
+.row.sel{background:rgba(250,45,72,.26)}
+.layer.fade{animation:fadein .28s ease-out}</style>
 </head>
 <body>
 <div id="app">Loading…</div>
@@ -206,8 +240,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.2.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.3.0';
 var CHANGES = [
+  { v: '1.3.0', d: '21 Nov 2026', t: 'Made for iPad', s: 'The iPad opens on the Songs list and shows a floating song panel beside the lyrics; editing uses two columns.', n: ['iPad opens on the normal Songs list, with a round + at the lower left', 'iPad landscape: on a lyrics page the song list floats as a dark glass panel and the lyrics make room beside it', 'iPad portrait: the same panel slides over the lyrics from the menu button', 'The panel has a Home button and a round +; the menu button hides while it is open (tap the lyrics or swipe the panel left to close)', 'Add, Cancel and Back never land on an empty page', 'iPad editing: details and the three paste boxes on the left, the line editor on the right', 'The panel stays dark in light mode', 'Gear, pen and home icons match the other buttons line weight', 'Reading and editing layouts now follow the width of their own page'] },
   { v: '1.2.1', d: '21 Nov 2026', t: 'Pull to sync, finished', s: 'The status text settles into place after you let go, then fades.', n: ['The pull hint starts level with the Settings button and keeps a fixed distance above the title as you drag', 'After you release, it eases back to that spot, shows Syncing, and fades out', 'Double-tap zoom is now blocked on every part of the page, including inside scrolling lists such as the line editor'] },
   { v: '1.2.0', d: '20 Nov 2026', t: 'Keep your pasted lyrics', s: 'Pasted text stays in its box so you can edit it and apply again.', n: ['Pasted Japanese, romaji and English text is kept with the song after you apply it', 'A red round × in the corner of each paste box clears it', 'Clearing asks first, with a sheet that slides up'] },
   { v: '1.1.1', d: '20 Nov 2026', t: 'Pull and recoil, as iOS does it', s: 'The pull hint travels with the page, and flicks that reach the end bounce back.', n: ['The pull-to-sync text keeps moving with the page and crossfades from Pull to Release without stopping', 'Pages that scroll use the phone\'s own momentum, so a flick that reaches the top or bottom recoils', 'Pages too short to scroll still stretch and spring back while you drag'] },
@@ -337,6 +372,16 @@ function checkExt() {
 }
 checkExt();
 window.addEventListener('resize', checkExt);
+var lastLayout = '';
+function layoutChanged() {
+  var key = ipadMode() + '/' + landscape();
+  if (key === lastLayout || !db) { lastLayout = key; return; }
+  lastLayout = key;
+  if (ipadMode()) panelOpen = landscape();
+  render(true);
+}
+window.addEventListener('resize', layoutChanged);
+window.addEventListener('orientationchange', layoutChanged);
 window.addEventListener('orientationchange', checkExt);
 
 /* ---------- theme ---------- */
@@ -487,13 +532,18 @@ function covH(s, big) {
 }
 function nonBlank(s, k) { var n = 0; s.lines.forEach(function (l) { if (String(l[k]).replace(/\s/g, '')) n++; }); return n; }
 var CHEV = '<span class="chev"><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1.5 1.5L6.5 7L1.5 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-var PEN = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/></svg>';
+var PEN = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16.5 4.5a2.1 2.1 0 0 1 3 3L8 19l-4 1z"/><path d="M14.5 6.5l3 3"/></svg>';
 var CHECK = '<svg width="20" height="16" viewBox="0 0 20 16"><path d="M2 8.5L7.5 14L18 2.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 var NOTEI = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 20.5V12a8.5 8.5 0 1 1 8.5 8.5Z"/><path d="M12 9v6M9 12h6"/></svg>';
+var MENU = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>';
 var BACK = '<svg width="10" height="17" viewBox="0 0 10 17"><path d="M8.4 1.4 L1.5 8.5 L8.4 15.6" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-var GEAR = '<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
+var GEAR = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 var EYE = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.6 12C4.8 7.6 8.2 5.4 12 5.4S19.2 7.6 21.4 12C19.2 16.4 15.8 18.6 12 18.6S4.8 16.4 2.6 12Z"/><circle cx="12" cy="12" r="3.6"/><circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none"/></svg>';
-function backBtn() { return '<button class="pill round glass" data-act="back" aria-label="Back">' + BACK + '</button>'; }
+var renderIdx = 0, panelOpen = true, fadeNext = false;
+function ipadMode() { return Math.min(window.innerWidth, window.innerHeight) >= 600; }
+function landscape() { return window.innerWidth > window.innerHeight; }
+function pmode() { return ipadMode() && stk().length >= 2 && stk()[1].p === 'read' && cp().p === 'read'; }
+function backBtn() { if (renderIdx === 1 && pmode()) return '<button class="pill round glass" data-act="panel" aria-label="Songs list">' + MENU + '</button>'; return '<button class="pill round glass" data-act="back" aria-label="Back">' + BACK + '</button>'; }
 function navBar(l, mid, r) { return '<div class="nav">' + l + '<div class="navt">' + (mid || '') + '</div>' + r + '</div>'; }
 function searchLinks(s, k) {
   var q = encodeURIComponent((s.title.jp || s.title.en) + ' ' + s.artist + (k === 'jp' ? ' 歌詞' : k === 'ro' ? ' romaji lyrics' : ' lyrics english translation'));
@@ -503,20 +553,21 @@ function searchLinks(s, k) {
 
 /* ---------- pages ---------- */
 function listP() {
-  var h = navBar('<span></span>', '', '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
+  var pm = pmode();
+  var h = navBar(pm ? '<button class="pill round glass" data-act="home" aria-label="Home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg></button>' : '<span></span>', '', pm ? '<span></span>' : '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
     '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><span class="fw' + (query ? ' has' : '') + '"><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></label>';
   var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist).toLowerCase().indexOf(q) >= 0; });
   if (!db.songs.length) h += '<div class="grp"><div class="empty">' + (cfg ? 'No songs yet. Pull down to sync, or tap Add to create one.' : 'No songs yet. Turn on Sync in Settings (the gear) to bring your songs here, or tap Add to create one.') + '</div></div>';
   else {
     h += '<div class="grp">';
     shown.forEach(function (s) {
-      h += '<div class="row" data-act="open" data-id="' + s.id + '">' + covH(s) + '<div class="sp"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist) + ' · ' + s.lines.length + (s.lines.length === 1 ? ' line' : ' lines') + '</small></div>' +
+      h += '<div class="row' + (pmode() && stk()[1].id === s.id ? ' sel' : '') + '" data-act="open" data-id="' + s.id + '">' + covH(s) + '<div class="sp"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist) + ' · ' + s.lines.length + (s.lines.length === 1 ? ' line' : ' lines') + '</small></div>' +
         '<span class="rt">' + (conf[s.id] ? '<button class="sbtn red" data-act="conflict" data-id="' + s.id + '">Choose version</button>' : (cfg ? '<span class="dot' + (s.dirty ? ' o' : '') + '"></span>' : '')) + CHEV + '</span></div>';
     });
     if (!shown.length) h += '<div class="empty">No songs match.</div>';
     h += '</div>';
   }
-  return h + '<div class="sync syncmsg' + (conflicts() ? ' warn' : '') + '">' + esc(cfg ? syncMsg : '') + '</div></div>';
+  return h + '<div class="sync syncmsg' + (conflicts() ? ' warn' : '') + '">' + esc(cfg ? syncMsg : '') + '</div></div>' + (ipadMode() ? '<button class="fab glass" data-act="tab" data-k="add" aria-label="Add song">+</button>' : '');
 }
 function readerP(p) {
   var s = song(); if (!s) return '';
@@ -589,7 +640,7 @@ function formP() {
   if (!s) return '';
   var dis = (nw && !s.title.jp.trim() && !s.title.en.trim()) ? ' dis' : '';
   var save = nw ? '<button class="pill pri' + dis + '" data-act="save" id="savebtn">Save</button>' : '<button class="pill round pri" data-act="save" id="savebtn" aria-label="Done">' + CHECK + '</button>';
-  var h = navBar(nw ? '<button class="pill glass" data-act="cancel">Cancel</button>' : backBtn(), nw ? 'New song' : 'Edit song', save) + '<div class="body"><div class="sec">Details</div><div class="grp">' +
+  var h = navBar(nw ? '<button class="pill glass" data-act="cancel">Cancel</button>' : backBtn(), nw ? 'New song' : 'Edit song', save) + '<div class="body fbody"><div class="fcol"><div class="sec">Details</div><div class="grp">' +
     '<div class="fld"><label>Title (Japanese)</label><input data-f="title.jp" value="' + esc(s.title.jp) + '" placeholder="Required"></div>' +
     '<div class="fld"><label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '"></div>' +
     '<div class="fld"><label>Title (English)</label><input data-f="title.en" value="' + esc(s.title.en) + '"></div>' +
@@ -607,7 +658,7 @@ function formP() {
       '<div class="btnrow"><button class="sbtn" data-act="menu" data-k="' + k + '">Search for ' + r[1] + ' ▾</button></div>' +
       (menuOpen === k ? '<div class="menu glass' + (an.m ? ' in' : '') + '">' + searchLinks(s, k).map(function (l) { return '<a href="' + l[1] + '" target="_blank" rel="noopener">' + l[0] + '<span>↗</span></a>'; }).join('') + '</div>' : '') + '</div>';
   });
-  h += '<div id="align">' + alignH(s) + '</div><div class="sec">Lines</div>';
+  h += '</div><div class="fcol"><div id="align">' + alignH(s) + '</div><div class="sec">Lines</div>';
   s.lines.forEach(function (l, i) {
     h += '<div class="ln">' + cell(s, i, 'ro') + cell(s, i, 'jp') + cell(s, i, 'en') +
       '<div class="cell note' + (l.note ? '' : ' empty') + '"><span class="tag">' + NOTEI + '</span><input data-c="note" data-i="' + i + '" value="' + esc(l.note) + '"></div>' +
@@ -615,7 +666,7 @@ function formP() {
   });
   if (!s.lines.length) h += '<div class="btnrow" style="justify-content:center;padding:6px 0 0"><button class="sbtn" data-act="addline">Add first line</button></div>';
   if (!nw) h += '<div class="btnrow" style="justify-content:center;padding:64px 0 24px"><button class="sbtn red" data-act="del">Delete song</button></div>';
-  return h + '</div>';
+  return h + '</div></div>';
 }
 function setP() {
   return navBar(backBtn(), '', '<span></span>') + '<div class="body"><h1 class="lg">Settings</h1><div class="sec">Appearance</div><div class="seg solo">' +
@@ -677,11 +728,19 @@ function scaffold() {
   app.innerHTML = '<div id="status" class="err" style="position:absolute;left:12px;right:12px;top:70px;z-index:80;display:none"></div><div id="stage"></div>' +
     '<div class="ptr" id="ptr" style="display:none"><span id="pa">Pull to sync</span><span id="pb">Release to sync</span></div><div class="tabs glass hide" id="tabs">' + [['songs', '♫', 'Songs'], ['add', '＋', 'Add']].map(function (tb, i) { return '<div class="tab' + (i === 0 ? ' on' : '') + '" data-act="tab" data-k="' + tb[0] + '"><span>' + tb[1] + '</span>' + tb[2] + '</div>'; }).join('') + '</div><div id="over"></div>';
 }
+function setPanel(open) {
+  panelOpen = open;
+  app.classList.toggle('pOpen', open);
+  var pt = document.getElementById('ptr'); if (pt && pmode()) pt.style.display = open ? '' : 'none';
+}
 function render(keep) {
   if (!db) return;
   scaffold();
+  var ip = pmode();
+  app.classList.toggle('ipad', ipadMode()); app.classList.toggle('pm', ip); app.classList.toggle('land', landscape()); app.classList.toggle('pOpen', ip && panelOpen);
   var oldb = document.querySelector('.layer.topl .body'), top = oldb ? oldb.scrollTop : 0;
   var oldsc = document.getElementById('sc'), top2 = oldsc ? oldsc.scrollTop : 0;
+  var oldcols = [].map.call(document.querySelectorAll('.layer.topl .fcol'), function (c) { return c.scrollTop; });
   var ae = document.activeElement, focus = null;
   if (ae && ae.getAttribute && (ae.hasAttribute('data-c') || ae.hasAttribute('data-f') || ae.hasAttribute('data-p') || ae.hasAttribute('data-s'))) {
     focus = { sel: ae.hasAttribute('data-c') ? '[data-c="' + ae.getAttribute('data-c') + '"][data-i="' + ae.getAttribute('data-i') + '"]' : ae.hasAttribute('data-f') ? '[data-f="' + ae.getAttribute('data-f') + '"]' : ae.hasAttribute('data-p') ? '[data-p="' + ae.getAttribute('data-p') + '"]' : '[data-s="' + ae.getAttribute('data-s') + '"]' };
@@ -689,22 +748,32 @@ function render(keep) {
   var st = stk(), h = '';
   st.forEach(function (p, i) {
     var last = i === st.length - 1;
-    h += '<div class="layer' + (last ? ' topl' : '') + (last && pushing ? ' enter' : '') + '" style="z-index:' + (i + 1) + '">' + pageHTML(p) + '</div>';
+    renderIdx = i;
+    h += '<div class="layer' + (ip && i === 0 ? ' panel' : '') + (last ? ' topl' : '') + (last && pushing ? ' enter' : '') + (last && fadeNext ? ' fade' : '') + '" style="z-index:' + (ip && i === 0 ? 40 : i + 1) + '">' + pageHTML(p) + '</div>';
   });
-  if (st.length > 1) h += '<div class="edge" id="edge"></div>';
+  renderIdx = 0;
+  if (ip) h += '<div class="pscrim" data-act="panel"></div>';
+  if (st.length > (ip ? 2 : 1)) h += '<div class="edge" id="edge"></div>';
   document.getElementById('stage').innerHTML = h;
-  document.getElementById('tabs').classList.toggle('hide', !(st.length === 1 && cp().p === 'list'));
-  document.getElementById('ptr').style.display = (st.length === 1 && cp().p === 'list') ? '' : 'none';
+  document.getElementById('tabs').classList.toggle('hide', ipadMode() ? true : !(st.length === 1 && cp().p === 'list'));
+  document.getElementById('ptr').style.display = ip ? (panelOpen ? '' : 'none') : ((st.length === 1 && cp().p === 'list') ? '' : 'none');
   var se = document.getElementById('status'); se.textContent = status; se.style.display = status ? 'block' : 'none';
   document.getElementById('over').innerHTML = sheet ? sheetHTML() : '';
-  pushing = false; an = { v: 0, m: 0, s: 0 };
+  pushing = false; fadeNext = false; an = { v: 0, m: 0, s: 0 };
   var nb = document.querySelector('.layer.topl .body');
   if (nb) nb.scrollTop = (keep && !freshScroll) ? top : 0;
+  var cols = document.querySelectorAll('.layer.topl .fcol');
+  if (keep && !freshScroll) for (var ci = 0; ci < cols.length; ci++) cols[ci].scrollTop = oldcols[ci] || 0;
   var sc = document.getElementById('sc');
   if (sc) { if (keep && !freshScroll) sc.scrollTop = top2; else centre(false); }
   freshScroll = false;
   syncBarColour();
   if (focus) { var f = document.querySelector(focus.sel); if (f) { try { f.focus(); } catch (e) {} } }
+}
+function openDetail(pg) {
+  stacks.songs = [stacks.songs[0], pg]; fadeNext = true; freshScroll = true; vmenu = false; menuOpen = null;
+  if (!landscape()) panelOpen = false;
+  render();
 }
 function push(p) { stk().push(p); pushing = true; freshScroll = true; vmenu = false; menuOpen = null; render(); }
 function pop() { var s = stk(); if (s.length > 1) { var gone = s.pop(); if (gone && gone.p === 'form') resetDraft(); freshScroll = true; vmenu = false; menuOpen = null; render(); } }
@@ -712,7 +781,8 @@ function popAnim() {
   var s = stk(); if (s.length < 2) return;
   var el = document.querySelector('.layer.topl'); if (!el) { pop(); return; }
   var lay = document.querySelectorAll('.layer'), prev = lay.length > 1 ? lay[lay.length - 2] : null, E = 'cubic-bezier(.32,.72,0,1)';
-  if (s.length === 2 && s[0].p === 'list') document.getElementById('tabs').classList.remove('hide');
+  if (prev && prev.classList.contains('panel')) prev = null;
+  if (!ipadMode() && s.length === 2 && s[0].p === 'list') document.getElementById('tabs').classList.remove('hide');
   if (prev) { prev.style.transition = 'none'; prev.style.transform = 'translateX(-28%)'; void prev.offsetWidth; prev.style.transition = 'transform .42s ' + E; prev.style.transform = 'translateX(0)'; }
   el.style.transition = 'transform .42s ' + E; el.style.boxShadow = '-8px 0 30px rgba(0,0,0,.25)'; el.style.transform = 'translateX(100%)';
   setTimeout(pop, 440);
@@ -788,6 +858,14 @@ function updateAlign() { var el = document.getElementById('align'), s = fs(); if
 
 /* ---------- events ---------- */
 document.addEventListener('click', function (e) {
+  if (db && pmode() && panelOpen && landscape() && e.target.closest && e.target.closest('.layer.topl') && !e.target.closest('.nav')) setPanel(false);
+});
+(function () {
+  var x0 = null;
+  document.addEventListener('touchstart', function (e) { x0 = (pmode() && panelOpen && e.target.closest && e.target.closest('.layer.panel')) ? e.touches[0].clientX : null; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (x0 !== null && e.changedTouches[0].clientX - x0 < -60) setPanel(false); x0 = null; }, { passive: true });
+})();
+document.addEventListener('click', function (e) {
   var t = e.target.closest ? e.target.closest('[data-act]') : null;
   if (!t || !db) return;
   var act = t.getAttribute('data-act'), i = +t.getAttribute('data-i'), k = t.getAttribute('data-k'), id = t.getAttribute('data-id'), s;
@@ -796,8 +874,10 @@ document.addEventListener('click', function (e) {
     if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); w.classList.remove('has'); try { inp.focus(); } catch (x) {} }
     return;
   }
+  if (act === 'panel') { setPanel(!panelOpen); return; }
+  if (act === 'home') { stacks.songs = [stacks.songs[0]]; fadeNext = true; freshScroll = true; vmenu = false; menuOpen = null; render(); return; }
   if (act === 'tab') { if (k === 'add') { if (!draftDirty()) resetDraft(); push({ p: 'form' }); } return; }
-  if (act === 'open') { curLine = 0; push({ p: 'read', id: id }); return; }
+  if (act === 'open') { curLine = 0; if (ipadMode()) { if (!pmode()) panelOpen = landscape(); openDetail({ p: 'read', id: id }); } else push({ p: 'read', id: id }); return; }
   if (act === 'edit') { push({ p: 'edit', id: id }); return; }
   if (act === 'back') { popAnim(); return; }
   if (act === 'gear') { push({ p: 'set' }); return; }
@@ -932,7 +1012,7 @@ document.addEventListener('input', function (e) {
   var st = null, touching = false, busy = false, nativeMax = 0, hintOn = false, lingering = false, fadeT = null, fadeT2 = null, EASE = 'cubic-bezier(.32,.72,0,1)';
   var T1 = 64, T2 = 80; /* page displacement where "Pull" is fully visible, and where "Release" takes over */
   function rb(d) { return 150 * (1 - Math.exp(-d / 260)); }
-  function listPage() { return !!db && stk().length === 1 && cp().p === 'list'; }
+  function listPage() { return !!db && (pmode() || (stk().length === 1 && cp().p === 'list')); }
   function parts() { return { el: document.getElementById('ptr'), a: document.getElementById('pa'), b: document.getElementById('pb') }; }
   function setHint(d, ms) {
     var q = parts(); if (!q.el) return;
@@ -975,7 +1055,7 @@ document.addEventListener('input', function (e) {
   /* scrollable pages: the browser bounces; we read how far it has stretched and keep the hint attached */
   document.addEventListener('scroll', function (e) {
     var b = e.target;
-    if (lingering || !b || !b.classList || !b.classList.contains('body') || !listPage()) return;
+    if (lingering || !b || !b.classList || !b.classList.contains('body') || !listPage() || !(pmode() ? b.closest('.layer.panel') : true)) return;
     var d = Math.max(0, -b.scrollTop);
     if (d > 0) { nativeMax = Math.max(nativeMax, d); setHint(d, 0); }
     else if (hintOn && !touching) { setHint(0, 0); }
@@ -983,15 +1063,16 @@ document.addEventListener('input', function (e) {
   document.addEventListener('touchstart', function (e) {
     st = null; touching = true; nativeMax = 0;
     if (lingering) stopLinger();
-    if (!db || !e.target.closest || e.target.closest('#edge') || !e.target.closest('.layer.topl .body')) return;
-    var b = document.querySelector('.layer.topl .body'); if (!b) return;
-    st = { y: e.touches[0].clientY, b: b, short: b.scrollHeight <= b.clientHeight + 1, top: b.scrollTop <= 0, bot: b.scrollTop + b.clientHeight >= b.scrollHeight - 1, mode: null, d: 0 };
+    if (!db || !e.target.closest || e.target.closest('#edge')) return;
+    var fc = e.target.closest('.fcol'); if (fc && getComputedStyle(fc).display !== 'contents') return;
+    var b = e.target.closest('.layer.panel .body') || e.target.closest('.layer.topl .body'); if (!b) return;
+    st = { list: b.closest('.layer.panel') ? true : (stk().length === 1 && cp().p === 'list'), y: e.touches[0].clientY, b: b, short: b.scrollHeight <= b.clientHeight + 1, top: b.scrollTop <= 0, bot: b.scrollTop + b.clientHeight >= b.scrollHeight - 1, mode: null, d: 0 };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
     if (!st || !st.short) return;
     var dy = e.touches[0].clientY - st.y;
     if (!st.mode) { if (dy > 6 && st.top) st.mode = 'down'; else if (dy < -6 && st.bot) st.mode = 'up'; else if (Math.abs(dy) > 6) st.mode = 'none'; }
-    if (st.mode === 'down') { st.d = rb(dy); st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + st.d + 'px)'; if (listPage()) setHint(st.d, 0); }
+    if (st.mode === 'down') { st.d = rb(dy); st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + st.d + 'px)'; if (st.list) setHint(st.d, 0); }
     else if (st.mode === 'up') { st.b.style.transition = 'none'; st.b.style.transform = 'translateY(' + (-rb(-dy)) + 'px)'; }
   }, { passive: true });
   function end() {
@@ -1001,8 +1082,8 @@ document.addEventListener('input', function (e) {
     if (s && s.short && (s.mode === 'down' || s.mode === 'up')) {
       s.b.style.transition = 'transform .55s ' + EASE; s.b.style.transform = 'translateY(0)';
       setTimeout(function () { s.b.style.transition = ''; s.b.style.transform = ''; }, 580);
-      if (s.mode === 'down' && listPage()) { go = s.d >= T2; pulled = true; }
-    } else if (listPage() && nativeMax > 0) { go = nativeMax >= T2; pulled = true; }
+      if (s.mode === 'down' && s.list) { go = s.d >= T2; pulled = true; }
+    } else if (s && s.list && nativeMax > 0) { go = nativeMax >= T2; pulled = true; }
     nativeMax = 0;
     if (go) trigger();
     else if (pulled) setHint(0, 550);
@@ -1028,6 +1109,7 @@ document.addEventListener('pointercancel', unpeek);
     if (!ed || stk().length < 2) return;
     var el = document.querySelector('.layer.topl'); if (!el) return;
     var lay = document.querySelectorAll('.layer'), prev = lay.length > 1 ? lay[lay.length - 2] : null;
+    if (prev && prev.classList.contains('panel')) prev = null;
     drag = { x0: e.clientX, el: el, prev: prev, dx: 0, v: 0, lx: e.clientX, lt: Date.now() };
     el.style.transition = 'none'; if (prev) prev.style.transition = 'none';
     try { ed.setPointerCapture(e.pointerId); } catch (x) {}
@@ -1053,7 +1135,7 @@ document.addEventListener('pointercancel', unpeek);
         d.el.style.transform = 'translateX(0)'; if (d.prev) d.prev.style.transform = 'translateX(-28%)';
         sheet = true; sheetKind = 'discard'; an.s = 1; setTimeout(function () { settle(); render(true); }, dur * 1000 + 20);
       } else {
-        if (stk().length === 2 && stk()[0].p === 'list') document.getElementById('tabs').classList.remove('hide');
+        if (!ipadMode() && stk().length === 2 && stk()[0].p === 'list') document.getElementById('tabs').classList.remove('hide');
         d.el.style.transform = 'translateX(100%)'; if (d.prev) d.prev.style.transform = 'translateX(0)'; setTimeout(pop, dur * 1000 + 20);
       }
     } else {
