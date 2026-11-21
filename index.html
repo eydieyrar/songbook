@@ -240,8 +240,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.3.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.3.1';
 var CHANGES = [
+  { v: '1.3.1', d: '21 Nov 2026', t: 'UtaTime link', s: 'The lyric search menu now offers UtaTime instead of Uta-Net.', n: ['Lyric search menu: Google, UtaTime, Genius'] },
   { v: '1.3.0', d: '21 Nov 2026', t: 'Made for iPad', s: 'The iPad opens on the Songs list and shows a floating song panel beside the lyrics; editing uses two columns.', n: ['iPad opens on the normal Songs list, with a round + at the lower left', 'iPad landscape: on a lyrics page the song list floats as a dark glass panel and the lyrics make room beside it', 'iPad portrait: the same panel slides over the lyrics from the menu button', 'The panel has a Home button and a round +; the menu button hides while it is open (tap the lyrics or swipe the panel left to close)', 'Add, Cancel and Back never land on an empty page', 'iPad editing: details and the three paste boxes on the left, the line editor on the right', 'The panel stays dark in light mode', 'Gear, pen and home icons match the other buttons line weight', 'Reading and editing layouts now follow the width of their own page'] },
   { v: '1.2.1', d: '21 Nov 2026', t: 'Pull to sync, finished', s: 'The status text settles into place after you let go, then fades.', n: ['The pull hint starts level with the Settings button and keeps a fixed distance above the title as you drag', 'After you release, it eases back to that spot, shows Syncing, and fades out', 'Double-tap zoom is now blocked on every part of the page, including inside scrolling lists such as the line editor'] },
   { v: '1.2.0', d: '20 Nov 2026', t: 'Keep your pasted lyrics', s: 'Pasted text stays in its box so you can edit it and apply again.', n: ['Pasted Japanese, romaji and English text is kept with the song after you apply it', 'A red round × in the corner of each paste box clears it', 'Clearing asks first, with a sheet that slides up'] },
@@ -548,7 +549,7 @@ function navBar(l, mid, r) { return '<div class="nav">' + l + '<div class="navt"
 function searchLinks(s, k) {
   var q = encodeURIComponent((s.title.jp || s.title.en) + ' ' + s.artist + (k === 'jp' ? ' 歌詞' : k === 'ro' ? ' romaji lyrics' : ' lyrics english translation'));
   var t = encodeURIComponent(s.title.jp || s.title.en);
-  return [['Google', 'https://www.google.com/search?q=' + q], ['Uta-Net', 'https://www.uta-net.com/search/?Aselect=2&Keyword=' + t + '&Bselect=3'], ['Genius', 'https://genius.com/search?q=' + q]];
+  return [['Google', 'https://www.google.com/search?q=' + q], ['UtaTime', 'https://www.utatime.com/global/'], ['Genius', 'https://genius.com/search?q=' + q]];
 }
 
 /* ---------- pages ---------- */
