@@ -126,7 +126,8 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 #app.pm .rd .blob{display:none}
 .layer.enter{will-change:transform}
 .snap *{filter:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
-.snap .layer.panel{background:#1b1b1f!important;will-change:left,top,bottom,width}
+.snap .layer.panel{background:#1b1b1f;will-change:left,top,bottom,width}
+.snap *{transition:color .55s ease,background-color .55s ease,border-color .55s ease,box-shadow .55s ease}
 .rd .nav{height:calc(var(--sat) + 100px);background:linear-gradient(hsl(var(--h) 45% 9%) 0%,hsl(var(--h) 45% 9% / .92) 28%,hsl(var(--h) 45% 9% / .7) 50%,hsl(var(--h) 45% 9% / .38) 70%,hsl(var(--h) 45% 9% / .12) 88%,hsl(var(--h) 45% 9% / 0) 100%)}
 .rd .nav .pill{color:#fff}
 
@@ -139,7 +140,16 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .al .en{font-size:calc(14px*var(--k,1));color:rgba(255,255,255,.75);display:block}
 .al .nt{display:none;margin-top:6px;padding-left:8px;border-left:3px solid #f5c542;font-size:13px;color:rgba(255,255,255,.9);font-style:italic;font-synthesis:none}
 .al.act .nt{display:block}
-.hid{color:transparent!important;background:rgba(255,255,255,.2);border-radius:6px}
+.al .ro.hid,.rhp.hid{transition:filter .3s,opacity .3s,text-shadow .3s}
+:root[data-rs=blur][data-rl=light] .al .ro.hid,:root[data-rs=blur][data-rl=light] .rhp.hid{filter:blur(4px);opacity:.72}
+:root[data-rs=blur][data-rl=strong] .al .ro.hid,:root[data-rs=blur][data-rl=strong] .rhp.hid{filter:blur(6.5px);opacity:.62}
+:root[data-rs=glow][data-rl=light] .al .ro.hid,:root[data-rs=glow][data-rl=light] .rhp.hid{color:transparent!important;text-shadow:0 0 .55em rgba(255,255,255,.8),0 0 1.1em rgba(255,255,255,.25)}
+:root[data-rs=glow][data-rl=strong] .al .ro.hid,:root[data-rs=glow][data-rl=strong] .rhp.hid{color:transparent!important;text-shadow:0 0 .9em rgba(255,255,255,.5),0 0 1.5em rgba(255,255,255,.15)}
+.rhbox{margin:10px 0 0;padding:14px 16px;border-radius:16px;background:#14161a;color:#fff}.rhbox .rhp{display:block;font-size:15px;color:rgba(255,255,255,.78)}.rhbox .rj{font-size:22px;font-weight:800;margin-top:3px}
+.al .enw{display:grid;grid-template-rows:1fr;transition:grid-template-rows .5s cubic-bezier(.32,.72,0,1),opacity .4s ease}
+.al .enw>.en{min-height:0;overflow:hidden;display:block;margin:0}
+.al .enw.hid{grid-template-rows:0fr;opacity:0}
+.al .enw.anim{-webkit-mask-image:linear-gradient(transparent,#000 16px);mask-image:linear-gradient(transparent,#000 16px)}
 .anote{margin-top:30px;padding:14px;border-radius:14px;background:rgba(255,255,255,.1);white-space:pre-wrap;font-size:14px;line-height:1.5}
 .cover{display:none}
 .grpbar{display:flex;align-items:center;border-radius:999px;height:44px;padding:0 4px}
@@ -245,8 +255,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.5.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.6.0';
 var CHANGES = [
+  { v: '1.6.0', d: '22 Nov 2026', t: 'Collapsing translations', s: 'Hiding the translation now folds the line away, romaji blurs when hidden, and Japanese can no longer be hidden.', n: ['Settings: choose how hidden romaji looks, Blur or Glow, as a light hint or a strong hide', 'Hiding the translation closes its row and the lines move up; showing it opens each row downward from the Japanese line', 'Hidden romaji is blurred and keeps its place', 'The language menu no longer has Japanese, so it is always shown', 'Home fades the panel into the page colours instead of ending grey then black', 'A second finger during a panel drag no longer freezes the panel halfway'] },
   { v: '1.5.1', d: '21 Nov 2026', t: 'Panel polish', s: 'Sideways panel drags lock the scroll, the eye menu no longer closes the panel, and Home settles smoothly.', n: ['Dragging the panel sideways no longer scrolls it up or down', 'The eye menu and its button leave the panel open', 'Home animation: the title, search and buttons glide to their places on the Songs page, so nothing jumps at the end'] },
   { v: '1.5.0', d: '21 Nov 2026', t: 'Panel you can drag', s: 'The iPad song panel floats over the lyrics without moving them and follows your finger to open and close.', n: ['The song panel floats over the lyrics; the lyrics no longer move or re-wrap when it opens', 'Drag the panel open from the left edge, and drag it closed from the panel, the cover area or empty space', 'Going back from New song or Edit no longer shows a black page or reopens the panel', 'Lighter Home animation'] },
   { v: '1.4.0', d: '21 Nov 2026', t: 'Smoother iPad panel', s: 'Songs slide in on the iPad, the panel starts hidden, opens with an edge swipe, and Home morphs the panel into the Songs page.', n: ['Opening a song on the iPad slides it in like on the iPhone', 'On a lyrics page the song panel starts hidden; swipe from the left edge or tap the menu button to open it', 'Home: the panel slides right and grows into the full Songs page', 'The lyrics background now extends behind the panel', 'Fixed line artifacts in the blurred lyrics background on Safari', 'The lyric search menu offers UtaTime instead of Uta-Net', 'Artist is now two fields: kanji and romaji'] },
@@ -282,7 +293,7 @@ function blankLine() { return { ro: '', jp: '', en: '', note: '' }; }
 function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', notes: '', lines: [] }); }
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
-  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {};
+  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light';
   d.ui.sz = (d.ui.sz === 0 || d.ui.sz > 0) && d.ui.sz < 4 ? Math.floor(d.ui.sz) : 1;
   d.ui.theme = d.ui.theme === 'light' || d.ui.theme === 'dark' ? d.ui.theme : 'system';
   d.ui.strip = d.ui.strip || {}; if (d.ui.strip.sq == null) d.ui.strip.sq = 1; if (d.ui.strip.cjk == null) d.ui.strip.cjk = 1; if (d.ui.strip.rd == null) d.ui.strip.rd = 0;
@@ -406,7 +417,9 @@ function syncBarColour() {
   if (stk && cp().p === 'read' && s) m.setAttribute('content', hslHex(hue(s), 45, 9));
   else m.setAttribute('content', dk ? '#000000' : '#f2f2f7');
 }
+function applyRH() { if (!db) return; var r = document.documentElement; r.setAttribute('data-rs', db.ui.rs || 'blur'); r.setAttribute('data-rl', db.ui.rl || 'light'); }
 function applyTheme() {
+  applyRH();
   var t = db ? db.ui.theme : 'system';
   var dk = t === 'dark' || (t === 'system' && mq && mq.matches);
   document.documentElement.classList.toggle('dark', dk);
@@ -589,8 +602,8 @@ function readerP(p) {
   s.lines.forEach(function (l, i) {
     h += '<div class="al' + (i === curLine ? ' act' : '') + '" data-act="line" data-i="' + i + '">' +
       (l.ro ? '<span class="ro' + (hide.ro ? ' hid' : '') + '">' + esc(l.ro) + '</span>' : '') +
-      (l.jp ? '<div class="jp' + (hide.jp ? ' hid' : '') + '">' + esc(l.jp) + '</div>' : '') +
-      (l.en ? '<span class="en' + (hide.en ? ' hid' : '') + '">' + esc(l.en) + '</span>' : '') +
+      (l.jp ? '<div class="jp">' + esc(l.jp) + '</div>' : '') +
+      (l.en ? '<div class="enw' + (hide.en ? ' hid' : '') + '"><span class="en">' + esc(l.en) + '</span></div>' : '') +
       (l.note ? '<div class="nt">' + esc(l.note) + '</div>' : '') + '</div>';
   });
   if (!s.lines.length) h += '<div class="anote">No lyrics yet. Tap Edit to add some.</div>';
@@ -602,12 +615,22 @@ function readerP(p) {
 }
 function vmenuHTML(s, anim) {
   var hide = db.ui.hide;
-  return '<div class="vmenu glass' + (anim ? ' in' : '') + '">' + ['ro', 'jp', 'en'].map(function (k) {
+  return '<div class="vmenu glass' + (anim ? ' in' : '') + '">' + ['ro', 'en'].map(function (k) {
     var have = nonBlank(s, k) > 0;
     return '<div class="' + (have ? '' : 'dis') + '" data-act="hide" data-k="' + k + '"><span>' + ({ ro: 'Romaji', jp: '日本語 (Japanese)', en: 'English' })[k] + '</span><span class="ck">' + (have && !hide[k] ? '✓' : '') + '</span></div>';
   }).join('') + '</div>';
 }
 var vtimer = null;
+/* while translations open or close, keep the current line where it is on screen */
+function holdAnchor(ms) {
+  var sc = document.getElementById('sc'), a = sc && sc.querySelector('.al.act'); if (!a) return;
+  var top0 = a.getBoundingClientRect().top, t0 = Date.now();
+  (function step() {
+    var d = a.getBoundingClientRect().top - top0;
+    if (Math.abs(d) > 0.5) sc.scrollTop += d;
+    if (Date.now() - t0 < ms) requestAnimationFrame(step);
+  })();
+}
 function setVMenu(open) {
   vmenu = open;
   var el = document.querySelector('.vmenu'), sc = document.querySelector('.mscrim');
@@ -682,6 +705,9 @@ function setP() {
     ['system', 'light', 'dark'].map(function (k) { return '<button data-act="theme" data-k="' + k + '" class="' + (db.ui.theme === k ? 'on' : '') + '">' + k.charAt(0).toUpperCase() + k.slice(1) + '</button>'; }).join('') + '</div>' +
     '<div class="sec">Reading · text size for all songs</div><div class="seg solo">' + KL.map(function (n, i) { return '<button data-act="size" data-k="' + i + '" class="' + (db.ui.sz === i ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div>' +
     '<div class="grp"><div class="fld"><div style="font-weight:800;font-size:' + (22 * KS[db.ui.sz]) + 'px;line-height:1.3">夜明けの電車</div><label style="margin:4px 0 0">' + KN[db.ui.sz] + '</label></div></div>' +
+    '<div class="sec">Hidden romaji · style</div><div class="seg solo">' + [['blur', 'Blur'], ['glow', 'Glow']].map(function (o) { return '<button data-act="rs" data-k="' + o[0] + '" class="' + (db.ui.rs === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="seg solo" style="margin-top:10px">' + [['light', 'Light hint'], ['strong', 'Strong hide']].map(function (o) { return '<button data-act="rl" data-k="' + o[0] + '" class="' + (db.ui.rl === o[0] ? 'on' : '') + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+    '<div class="rhbox"><span class="rhp hid">Sample line number one</span><div class="rj">サンプルの一行目</div></div>' +
     '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small>' + CHEV + '</div>' +
     '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div>' + CHEV + '</div></div>' +
     '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small>' + CHEV + '</div></div></div>';
@@ -808,17 +834,22 @@ function goHome() {
   stacks.songs = [stacks.songs[0]]; freshScroll = true; vmenu = false; menuOpen = null; panelOpen = false; fadeNext = false;
   render();
   void snap.offsetWidth;
-  var E = 'cubic-bezier(.32,.72,0,1)';
+  var E = 'cubic-bezier(.32,.72,0,1)', cs = getComputedStyle(document.documentElement), pv = function (n) { return cs.getPropertyValue(n).trim(); };
+  /* colours: the dark frosted panel settles into the real page colours instead of jumping from grey to black at the end */
+  ['--fg', '--mu', '--card', '--line', '--field', '--glass', '--glassb'].forEach(function (n) { sp.style.setProperty(n, pv(n)); });
+  sp.style.color = pv('--fg'); sp.style.borderColor = 'transparent'; sp.style.boxShadow = 'none';
+  sp.style.backgroundColor = pv('--bg'); sp.style.setProperty('background-color', pv('--bg'), 'important');
+  if (sbody) { sbody.style.setProperty('filter', 'blur(3px)', 'important'); }
   [].forEach.call(snap.children, function (c) { if (c !== sp) c.style.opacity = '0'; });
-  sp.style.transition = 'left .5s ' + E + ',top .5s ' + E + ',bottom .5s ' + E + ',width .5s ' + E + ',border-radius .5s ' + E;
-  var T2 = ' .5s ' + E;
-  if (sbody) { sbody.style.transition = 'padding-top' + T2; sbody.style.paddingTop = 'calc(var(--sat) + 52px)'; }
+  sp.style.transition = 'left .55s ' + E + ',top .55s ' + E + ',bottom .55s ' + E + ',width .55s ' + E + ',border-radius .55s ' + E + ',background-color .55s ease,color .55s ease,border-color .4s ease,box-shadow .4s ease';
+  var T2 = ' .55s ' + E;
+  if (sbody) { sbody.style.transition = 'padding-top' + T2 + ',filter .26s ease .34s'; sbody.style.paddingTop = 'calc(var(--sat) + 52px)'; }
   if (snav) { snav.style.transition = 'padding' + T2; snav.style.paddingTop = 'calc(var(--sat) + 4px)'; snav.style.paddingLeft = '12px'; snav.style.paddingRight = '12px'; }
   if (sfab) { sfab.style.transition = 'left' + T2 + ',bottom' + T2; sfab.style.left = '18px'; sfab.style.bottom = 'calc(20px + env(safe-area-inset-bottom))'; }
   if (shome) { shome.style.transition = 'opacity .25s ease'; shome.style.opacity = '0'; }
   sp.style.left = '0px'; sp.style.top = '0px'; sp.style.bottom = '0px'; sp.style.width = ar.width + 'px'; sp.style.borderRadius = '0px';
-  snap.style.transition = 'opacity .22s ease .34s'; snap.style.opacity = '0';
-  setTimeout(function () { if (snap.parentNode) snap.parentNode.removeChild(snap); }, 620);
+  snap.style.transition = 'opacity .24s ease .36s'; snap.style.opacity = '0';
+  setTimeout(function () { if (snap.parentNode) snap.parentNode.removeChild(snap); }, 680);
 }
 function push(p) { if (ipadMode()) panelOpen = false; stk().push(p); pushing = true; freshScroll = true; vmenu = false; menuOpen = null; render(); }
 function pop() { var s = stk(); if (s.length > 1) { var gone = s.pop(); if (gone && gone.p === 'form') resetDraft(); freshScroll = true; vmenu = false; menuOpen = null; render(); } }
@@ -906,18 +937,28 @@ function updateAlign() { var el = document.getElementById('align'), s = fs(); if
   /* the song panel follows the finger both ways; start at the left edge to open, anywhere outside the lyrics (panel, cover area, empty space) to close */
   var W = 378, g = null;
   function scr() { return document.querySelector('.pscrim'); }
+  function clearStale() {
+    var pn0 = document.querySelector('.layer.panel');
+    if (pn0 && (pn0.style.transform || pn0.style.transition || pn0.style.visibility)) { pn0.style.transform = ''; pn0.style.transition = ''; pn0.style.visibility = ''; }
+    var sc1 = scr(); if (sc1 && (sc1.style.opacity || sc1.style.transition)) { sc1.style.opacity = ''; sc1.style.transition = ''; sc1.style.pointerEvents = ''; }
+  }
   document.addEventListener('touchstart', function (e) {
+    if (g && g.on) return;
+    if (!g) clearStale();
     g = null;
     if (!db || !pmode() || sheet || e.touches.length !== 1) return;
     var t = e.touches[0], tg = e.target;
     if (!panelOpen) { if (t.clientX > 30) return; }
     else if (tg.closest && (tg.closest('.ly') || tg.closest('.eyebtn') || tg.closest('.vmenu') || tg.closest('.sheet'))) return;
     var pn = document.querySelector('.layer.panel'); if (!pn) return;
-    g = { x: t.clientX, y: t.clientY, open: panelOpen, on: false, pn: pn, off: panelOpen ? 0 : -W, cur: panelOpen ? 0 : -W, v: 0, lx: t.clientX, lt: Date.now() };
+    g = { id: t.identifier, x: t.clientX, y: t.clientY, open: panelOpen, on: false, pn: pn, off: panelOpen ? 0 : -W, cur: panelOpen ? 0 : -W, v: 0, lx: t.clientX, lt: Date.now() };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
     if (!g) return;
-    var t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    var t = null, k;
+    for (k = 0; k < e.touches.length; k++) if (e.touches[k].identifier === g.id) t = e.touches[k];
+    if (!t) return;
+    var dx = t.clientX - g.x, dy = t.clientY - g.y;
     if (!g.on) {
       if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 6) { g = null; return; }
       if (Math.abs(dx) > 4 && Math.abs(dx) > Math.abs(dy) && e.cancelable) e.preventDefault();
@@ -931,8 +972,10 @@ function updateAlign() { var el = document.getElementById('align'), s = fs(); if
     g.pn.style.transform = 'translateX(' + g.cur + 'px)';
     var sc = scr(); if (sc) { sc.style.opacity = String(1 + g.cur / W); sc.style.pointerEvents = 'none'; }
   }, { passive: false });
-  function end() {
-    if (!g) return; var x = g; g = null; if (!x.on) return;
+  function end(e) {
+    if (!g) return;
+    if (e && e.changedTouches) { var mine = false, k; for (k = 0; k < e.changedTouches.length; k++) if (e.changedTouches[k].identifier === g.id) mine = true; if (!mine) return; }
+    var x = g; g = null; if (!x.on) return;
     if (x.bd) x.bd.style.overflowY = x.bdo || '';
     var target = x.v > 0.35 ? true : x.v < -0.35 ? false : x.cur > -W / 2;
     var sc = scr();
@@ -980,13 +1023,16 @@ document.addEventListener('click', function (e) {
   }
   if (act === 'hide') {
     db.ui.hide[k] = !db.ui.hide[k]; save();
-    var hs = document.querySelectorAll('.al .' + k), q;
-    for (q = 0; q < hs.length; q++) hs[q].classList.toggle('hid', !!db.ui.hide[k]);
+    var hs = document.querySelectorAll(k === 'en' ? '.al .enw' : '.al .ro'), q;
+    if (k === 'en') holdAnchor(650);
+    for (q = 0; q < hs.length; q++) { hs[q].classList.toggle('hid', !!db.ui.hide[k]); if (k === 'en') { hs[q].classList.add('anim'); } }
+    if (k === 'en') setTimeout(function () { var an2 = document.querySelectorAll('.al .enw.anim'), z; for (z = 0; z < an2.length; z++) an2[z].classList.remove('anim'); }, 560);
     var ck = document.querySelector('.vmenu [data-k="' + k + '"] .ck'); if (ck) ck.textContent = db.ui.hide[k] ? '' : '✓';
     return;
   }
   if (act === 'vmenu') { setVMenu(!vmenu); return; }
   if (act === 'vclose') { setVMenu(false); return; }
+  if (act === 'rs' || act === 'rl') { db.ui[act] = k; save(); applyRH(); render(true); return; }
   if (act === 'theme') { db.ui.theme = k; save(); applyTheme(); render(true); return; }
   if (act === 'size') { db.ui.sz = +k; save(); render(true); return; }
   if (act === 'menu') { if (menuOpen === k) closeAnim('.menu', function () { menuOpen = null; render(true); }); else { menuOpen = k; an.m = 1; render(true); } return; }
