@@ -125,6 +125,8 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 #app.pm .layer.topl,#app.pm .rd{background:transparent}
 #app.pm .rd .blob{display:none}
 .layer.enter{will-change:transform}
+.snap *{filter:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.snap .layer.panel{background:#1b1b1f!important;will-change:left,top,bottom,width}
 .rd .nav{height:calc(var(--sat) + 100px);background:linear-gradient(hsl(var(--h) 45% 9%) 0%,hsl(var(--h) 45% 9% / .92) 28%,hsl(var(--h) 45% 9% / .7) 50%,hsl(var(--h) 45% 9% / .38) 70%,hsl(var(--h) 45% 9% / .12) 88%,hsl(var(--h) 45% 9% / 0) 100%)}
 .rd .nav .pill{color:#fff}
 
@@ -223,7 +225,6 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 #app.ipad .layer.panel .nav{background:none;padding:16px 16px 0}
 #app.ipad .layer.panel .body{padding-top:calc(var(--sat) + 72px)}
 #app.ipad .layer:not(.panel),#app.ipad .dempty{transition:left .42s cubic-bezier(.32,.72,0,1)}
-#app.ipad.land.pOpen .layer:not(.panel),#app.ipad.land.pOpen .dempty{left:344px}
 #app.ipad #tabs{left:172px;z-index:45;--glass:rgba(70,70,76,.5);--glassb:rgba(255,255,255,.14);--mu:#98989f}
 .dempty{display:none;position:absolute;left:0;top:0;right:0;bottom:0;z-index:0;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--mu);font-size:17px;background:var(--bg)}
 .dempty .dcov{width:120px;height:120px;border-radius:28px;background:var(--field);display:flex;align-items:center;justify-content:center;font-size:54px;font-weight:800;color:var(--mu)}
@@ -244,8 +245,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.4.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.5.0';
 var CHANGES = [
+  { v: '1.5.0', d: '21 Nov 2026', t: 'Panel you can drag', s: 'The iPad song panel floats over the lyrics without moving them and follows your finger to open and close.', n: ['The song panel floats over the lyrics; the lyrics no longer move or re-wrap when it opens', 'Drag the panel open from the left edge, and drag it closed from the panel, the cover area or empty space', 'Going back from New song or Edit no longer shows a black page or reopens the panel', 'Lighter Home animation'] },
   { v: '1.4.0', d: '21 Nov 2026', t: 'Smoother iPad panel', s: 'Songs slide in on the iPad, the panel starts hidden, opens with an edge swipe, and Home morphs the panel into the Songs page.', n: ['Opening a song on the iPad slides it in like on the iPhone', 'On a lyrics page the song panel starts hidden; swipe from the left edge or tap the menu button to open it', 'Home: the panel slides right and grows into the full Songs page', 'The lyrics background now extends behind the panel', 'Fixed line artifacts in the blurred lyrics background on Safari', 'The lyric search menu offers UtaTime instead of Uta-Net', 'Artist is now two fields: kanji and romaji'] },
   { v: '1.3.0', d: '21 Nov 2026', t: 'Made for iPad', s: 'The iPad opens on the Songs list and shows a floating song panel beside the lyrics; editing uses two columns.', n: ['iPad opens on the normal Songs list, with a round + at the lower left', 'iPad landscape: on a lyrics page the song list floats as a dark glass panel and the lyrics make room beside it', 'iPad portrait: the same panel slides over the lyrics from the menu button', 'The panel has a Home button and a round +; the menu button hides while it is open (tap the lyrics or swipe the panel left to close)', 'Add, Cancel and Back never land on an empty page', 'iPad editing: details and the three paste boxes on the left, the line editor on the right', 'The panel stays dark in light mode', 'Gear, pen and home icons match the other buttons line weight', 'Reading and editing layouts now follow the width of their own page'] },
   { v: '1.2.1', d: '21 Nov 2026', t: 'Pull to sync, finished', s: 'The status text settles into place after you let go, then fades.', n: ['The pull hint starts level with the Settings button and keeps a fixed distance above the title as you drag', 'After you release, it eases back to that spot, shows Syncing, and fades out', 'Double-tap zoom is now blocked on every part of the page, including inside scrolling lists such as the line editor'] },
@@ -575,7 +577,7 @@ function listP() {
   return h + '<div class="sync syncmsg' + (conflicts() ? ' warn' : '') + '">' + esc(cfg ? syncMsg : '') + '</div></div>' + (ipadMode() ? '<button class="fab glass" data-act="tab" data-k="add" aria-label="Add song">+</button>' : '');
 }
 function readerP(p) {
-  var s = song(); if (!s) return '';
+  var i0 = p && p.id ? findSong(p.id) : -1, s = i0 < 0 ? song() : db.songs[i0]; if (!s) return '';
   var h1 = hue(s), h2 = (h1 + 140) % 360, name = s.title.jp || s.title.en || '(untitled)', hide = db.ui.hide;
   if (curLine >= s.lines.length) curLine = 0;
   var h = '<div class="rd" style="--h:' + h1 + ';--rb:hsl(' + h1 + ',45%,9%);--k:' + KS[db.ui.sz] + '">' +
@@ -795,7 +797,7 @@ function goHome() {
   var ar = app2.getBoundingClientRect(), pr = pn.getBoundingClientRect();
   var snap = stage.cloneNode(true);
   [].forEach.call(snap.querySelectorAll('[id]'), function (e) { e.removeAttribute('id'); });
-  snap.removeAttribute('id'); snap.style.cssText = 'position:absolute;inset:0;z-index:90;pointer-events:none';
+  snap.removeAttribute('id'); snap.className = 'snap'; snap.style.cssText = 'position:absolute;inset:0;z-index:90;pointer-events:none';
   var sp = snap.querySelector('.layer.panel');
   [].forEach.call(snap.children, function (c) { if (c !== sp) { c.style.transition = 'opacity .35s ease'; } });
   sp.style.cssText += ';visibility:visible;transform:none;left:' + (pr.left - ar.left) + 'px;top:' + (pr.top - ar.top) + 'px;bottom:' + (ar.bottom - pr.bottom) + 'px;width:' + pr.width + 'px;transition:none';
@@ -810,7 +812,7 @@ function goHome() {
   snap.style.transition = 'opacity .22s ease .34s'; snap.style.opacity = '0';
   setTimeout(function () { if (snap.parentNode) snap.parentNode.removeChild(snap); }, 620);
 }
-function push(p) { stk().push(p); pushing = true; freshScroll = true; vmenu = false; menuOpen = null; render(); }
+function push(p) { if (ipadMode()) panelOpen = false; stk().push(p); pushing = true; freshScroll = true; vmenu = false; menuOpen = null; render(); }
 function pop() { var s = stk(); if (s.length > 1) { var gone = s.pop(); if (gone && gone.p === 'form') resetDraft(); freshScroll = true; vmenu = false; menuOpen = null; render(); } }
 function popAnim() {
   var s = stk(); if (s.length < 2) return;
@@ -893,25 +895,39 @@ function updateAlign() { var el = document.getElementById('align'), s = fs(); if
 
 /* ---------- events ---------- */
 (function () {
-  var d = null, W = 378;
+  /* the song panel follows the finger both ways; start at the left edge to open, anywhere outside the lyrics (panel, cover area, empty space) to close */
+  var W = 378, g = null;
+  function scr() { return document.querySelector('.pscrim'); }
   document.addEventListener('touchstart', function (e) {
-    d = null;
-    if (!db || !pmode() || panelOpen || sheet || e.touches.length !== 1) return;
-    var t = e.touches[0]; if (t.clientX > 26) return;
+    g = null;
+    if (!db || !pmode() || sheet || e.touches.length !== 1) return;
+    var t = e.touches[0], tg = e.target;
+    if (!panelOpen) { if (t.clientX > 30) return; }
+    else if (tg.closest && (tg.closest('.ly') || tg.closest('.eyebtn') || tg.closest('.vmenu') || tg.closest('.sheet'))) return;
     var pn = document.querySelector('.layer.panel'); if (!pn) return;
-    d = { x: t.clientX, y: t.clientY, pn: pn, dx: 0, on: false };
+    g = { x: t.clientX, y: t.clientY, open: panelOpen, on: false, pn: pn, off: panelOpen ? 0 : -W, cur: panelOpen ? 0 : -W, v: 0, lx: t.clientX, lt: Date.now() };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
-    if (!d) return;
-    var t = e.touches[0], dx = t.clientX - d.x, dy = t.clientY - d.y;
-    if (!d.on) { if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { d = null; return; } if (dx > 8) { d.on = true; d.pn.style.transition = 'none'; d.pn.style.visibility = 'visible'; } else return; }
-    d.dx = Math.max(0, Math.min(W, dx));
-    d.pn.style.transform = 'translateX(' + (d.dx - W) + 'px)';
+    if (!g) return;
+    var t = e.touches[0], dx = t.clientX - g.x, dy = t.clientY - g.y;
+    if (!g.on) {
+      if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) { g = null; return; }
+      if (g.open ? dx < -8 : dx > 8) { g.on = true; g.pn.style.transition = 'none'; g.pn.style.visibility = 'visible'; var sc0 = scr(); if (sc0) sc0.style.transition = 'none'; }
+      else { if (Math.abs(dx) > 8) g = null; return; }
+    }
+    var now = Date.now(), dt = now - g.lt;
+    if (dt > 0) { g.v = 0.6 * g.v + 0.4 * ((t.clientX - g.lx) / dt); g.lx = t.clientX; g.lt = now; }
+    g.cur = Math.max(-W, Math.min(0, g.off + dx));
+    g.pn.style.transform = 'translateX(' + g.cur + 'px)';
+    var sc = scr(); if (sc) { sc.style.opacity = String(1 + g.cur / W); sc.style.pointerEvents = 'none'; }
   }, { passive: true });
   function end() {
-    if (!d) return; var x = d; d = null; if (!x.on) return;
+    if (!g) return; var x = g; g = null; if (!x.on) return;
+    var target = x.v > 0.35 ? true : x.v < -0.35 ? false : x.cur > -W / 2;
+    var sc = scr();
     x.pn.style.transition = ''; x.pn.style.transform = ''; x.pn.style.visibility = '';
-    if (x.dx > 90) setPanel(true);
+    if (sc) { sc.style.transition = ''; sc.style.opacity = ''; sc.style.pointerEvents = ''; }
+    setPanel(target);
   }
   document.addEventListener('touchend', end, { passive: true });
   document.addEventListener('touchcancel', end, { passive: true });
