@@ -266,7 +266,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .ksheet h3{margin:0 0 6px;font-size:18px}.ksheet .grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
 .ksheet .kt button.tapb{font-size:12.5px;padding:7px 14px;border-radius:999px;background:#fa2d48;color:#fff}
 .krow{display:flex;gap:10px;align-items:center}.krow input,.krow select{flex:1;min-width:0}.krow .seg{margin:0;flex:none;width:auto}
-.cover.ki{width:250px}.cover.ki .art{width:210px;height:210px;font-size:88px}.cover.ki .ct{margin-top:14px}
+.cover.ki{width:250px}.cover.ki .art{width:250px;height:250px;font-size:105px}.cover.ki .ct{margin-top:14px}
 *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,select{-webkit-user-select:text!important;user-select:text!important}
 
@@ -291,8 +291,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.11.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.11.1';
 var CHANGES = [
+  { v: '1.11.1', d: '22 Nov 2026', t: 'Bigger cover', s: 'On iPad the cover is as wide as the key table below it again.', n: ['The cover is no longer shrunk when the key table is shown; it matches the table width'] },
   { v: '1.11.0', d: '22 Nov 2026', t: 'Offline words, kanji, pitch', s: 'Load every word of a song for offline lookups, see what each kanji means, and optionally show the pitch accent.', n: ['Edit song, Word lookup, Load all words: reads every line of the song with jpdb and keeps the words and kanji on this device, so lookups work offline', 'Lines you tap are now kept between sessions too', 'The word bubble shows a short breakdown of each kanji (Settings, Dictionary can turn it off)', 'Tapping the same word again closes the bubble', 'Pitch accent is saved but hidden; Settings, Dictionary can show it drawn like jpdb, with a line over the high syllables'] },
   { v: '1.10.0', d: '22 Nov 2026', t: 'jpdb dictionary', s: 'Word lookup can use jpdb, which splits each line into words correctly and shows the pitch accent.', n: ['Settings, Dictionary: paste your jpdb API key (kept only on this device, never in backups or sync) to switch the lookup from Jotoba to jpdb', 'jpdb reads the whole line once, so the tapped word is cut at the right place and conjugations show their dictionary form', 'The bubble also shows the pitch accent number and a common tag; if jpdb is unreachable the lookup falls back to Jotoba'] },
   { v: '1.9.0', d: '22 Nov 2026', t: 'Word lookup', s: 'Tap a word in the current line to see its reading and meaning, and text can no longer be selected by touch.', n: ['Tap a word in the line that is already current to open a small bubble with the reading and meanings', 'Conjugated words are shown by their dictionary form; the star saves a word to Settings, Saved words', 'Looked-up words are kept on the device, so repeats work offline', 'Long-pressing text no longer selects it or opens Copy, Look Up and Translate; typing fields still work'] },
