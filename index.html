@@ -267,6 +267,20 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .ksheet .kt button.tapb{font-size:12.5px;padding:7px 14px;border-radius:999px;background:#fa2d48;color:#fff}
 .krow{display:flex;gap:10px;align-items:center}.krow input,.krow select{flex:1;min-width:0}.krow .seg{margin:0;flex:none;width:auto}
 .cover.ki{width:250px}.cover.ki .art{width:210px;height:210px;font-size:88px}.cover.ki .ct{margin-top:14px}
+*{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select{-webkit-user-select:text!important;user-select:text!important}
+
+.wlayer{position:fixed;left:0;top:0;right:0;bottom:0;z-index:70;pointer-events:none}
+.whl{position:fixed;border-radius:7px;background:rgba(255,255,255,.24);pointer-events:none}
+.wpop{position:fixed;pointer-events:auto;width:290px;max-width:calc(100vw - 20px);border-radius:20px;background:rgba(58,58,62,.94);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 34px rgba(0,0,0,.5);padding:12px 14px;color:#fff;font-size:14px;animation:wpin .18s ease-out}
+@keyframes wpin{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+.warr{position:absolute;bottom:-7px;width:14px;height:14px;background:rgba(58,58,62,.94);border-right:1px solid rgba(255,255,255,.16);border-bottom:1px solid rgba(255,255,255,.16);transform:rotate(45deg)}
+.wpop.below .warr{bottom:auto;top:-7px;transform:rotate(225deg)}
+.wtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.wwd{font-size:22px;font-weight:800;line-height:1.2}.wrd{font-size:13px;color:#cfcfd4;margin-top:1px}
+.wstar{width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:16px;padding:0;flex:none}.wstar.on{background:#f5c542;color:#1c1c1e}
+.wfrom{font-size:11.5px;color:#9a9aa0;margin-top:6px}.wpop ol{margin:8px 0 0;padding-left:18px;line-height:1.4;color:#f2f2f7}
+.wtag{display:inline-block;margin-top:8px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;color:#c9c9ce;margin-right:5px}
+.wnone{color:#c9c9ce;margin-top:4px;line-height:1.4}
 </style>
 </head>
 <body>
@@ -275,8 +289,10 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.8.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.10.0';
 var CHANGES = [
+  { v: '1.10.0', d: '22 Nov 2026', t: 'jpdb dictionary', s: 'Word lookup can use jpdb, which splits each line into words correctly and shows the pitch accent.', n: ['Settings, Dictionary: paste your jpdb API key (kept only on this device, never in backups or sync) to switch the lookup from Jotoba to jpdb', 'jpdb reads the whole line once, so the tapped word is cut at the right place and conjugations show their dictionary form', 'The bubble also shows the pitch accent number and a common tag; if jpdb is unreachable the lookup falls back to Jotoba'] },
+  { v: '1.9.0', d: '22 Nov 2026', t: 'Word lookup', s: 'Tap a word in the current line to see its reading and meaning, and text can no longer be selected by touch.', n: ['Tap a word in the line that is already current to open a small bubble with the reading and meanings', 'Conjugated words are shown by their dictionary form; the star saves a word to Settings, Saved words', 'Looked-up words are kept on the device, so repeats work offline', 'Long-pressing text no longer selects it or opens Copy, Look Up and Translate; typing fields still work'] },
   { v: '1.8.1', d: '22 Nov 2026', t: 'Key button always there', s: 'The key, range and BPM button and the iPad table now show on every song, even before anything is filled in.', n: ['The ♪ button and the iPad table show on every song, with dashes until you fill them in'] },
   { v: '1.8.0', d: '22 Nov 2026', t: 'Key, range and BPM', s: 'Each song can hold its key, the singer\'s lowest and highest note and the BPM, with a key changer that checks your own range.', n: ['New Key & range group in the song details: original key, lowest and highest note, BPM with Tap, and your key shift', 'Your range is set once in Settings; notes outside it show in red', 'iPad: the table sits under the album cover. iPhone and portrait: the ♪ button opens it as a sheet', 'A pitch graph appears when a song has pitch data'] },
   { v: '1.7.1', d: '22 Nov 2026', t: 'Tidier settings', s: 'One preview in Settings shows both the text size and the hidden romaji style.', n: ['Settings: the two samples are now one preview with three lines, so text size and hidden romaji can be tuned together'] },
@@ -655,6 +671,240 @@ function keyTableHTML(s, cp) {
   h += '<div class="kchg"><button data-act="kshift" data-k="-1" aria-label="Lower the key">\u2039</button><b>' + shiftText(sh) + '</b><button data-act="kshift" data-k="1" aria-label="Raise the key">\u203a</button></div></div>';
   return h;
 }
+/* ---------- word lookup: tap a word in the current line ---------- */
+var WORDKEY = 'songbook.words', wordsDB = null, wpop = null, wcur = null;
+var PARTICLES = {
+  '\u306f': 'topic marker', '\u304c': 'subject marker', '\u3092': 'object marker', '\u306b': 'to, at, in (target, place or time)', '\u3067': 'at, by, with (place of action or means)',
+  '\u3068': 'and, with, or marks a quote', '\u3082': 'also, too', '\u306e': 'of (possessive), or makes a phrase into a noun', '\u3078': 'toward (direction)', '\u3084': 'and (a loose list)',
+  '\u304b': 'question marker', '\u306d': 'right? (seeking agreement)', '\u3088': 'emphasis, telling the listener', '\u306a': 'prohibition (don\u2019t), or an adjective ending', '\u3060': 'is (plain copula)',
+  '\u3067\u3059': 'is (polite copula)', '\u307e\u3059': 'polite verb ending', '\u3070': 'if (conditional ending)',
+  '\u304b\u3089': 'from, because', '\u307e\u3067': 'until, as far as', '\u3067\u3082': 'even, or, but', '\u3057': 'and what\u2019s more', '\u3051\u3069': 'but, although', '\u3063\u3066': 'quoting or topic particle (casual)'
+};
+function wordsLoad() {
+  if (wordsDB) return wordsDB;
+  try { wordsDB = JSON.parse(localStorage.getItem(WORDKEY) || 'null'); } catch (e) { wordsDB = null; }
+  if (!wordsDB || typeof wordsDB !== 'object') wordsDB = {};
+  wordsDB.c = wordsDB.c || {}; wordsDB.s = wordsDB.s || {};
+  return wordsDB;
+}
+function wordsSave() { try { localStorage.setItem(WORDKEY, JSON.stringify(wordsDB)); } catch (e) {} }
+var ROM = (function () {
+  var t = 'a\u3042 i\u3044 u\u3046 e\u3048 o\u304a ka\u304b ki\u304d ku\u304f ke\u3051 ko\u3053 sa\u3055 shi\u3057 su\u3059 se\u305b so\u305d ta\u305f chi\u3061 tsu\u3064 te\u3066 to\u3068 na\u306a ni\u306b nu\u306c ne\u306d no\u306e ha\u306f hi\u3072 fu\u3075 he\u3078 ho\u307b ma\u307e mi\u307f mu\u3080 me\u3081 mo\u3082 ya\u3084 yu\u3086 yo\u3088 ra\u3089 ri\u308a ru\u308b re\u308c ro\u308d wa\u308f o\u3092 n\u3093 ga\u304c gi\u304e gu\u3050 ge\u3052 go\u3054 za\u3056 ji\u3058 zu\u305a ze\u305c zo\u305e da\u3060 ji\u3062 zu\u3065 de\u3067 do\u3069 ba\u3070 bi\u3073 bu\u3076 be\u3079 bo\u307c pa\u3071 pi\u3074 pu\u3077 pe\u307a po\u307d vu\u3094'.split(' '), m = {}, i;
+  for (i = 0; i < t.length; i++) m[t[i].slice(-1)] = t[i].slice(0, -1);
+  return m;
+})();
+var ROMC = { '\u304d': 'ky', '\u3057': 'sh', '\u3061': 'ch', '\u306b': 'ny', '\u3072': 'hy', '\u307f': 'my', '\u308a': 'ry', '\u304e': 'gy', '\u3058': 'j', '\u3073': 'by', '\u3074': 'py' };
+function toRomaji(kana) {
+  var k = '', i, c, out = '', small = { '\u3083': 'a', '\u3085': 'u', '\u3087': 'o' }, dbl = false, last = '';
+  for (i = 0; i < kana.length; i++) { c = kana.charCodeAt(i); k += (c >= 0x30a1 && c <= 0x30f6) ? String.fromCharCode(c - 0x60) : kana.charAt(i); }
+  for (i = 0; i < k.length; i++) {
+    c = k.charAt(i);
+    if (c === '\u3063') { dbl = true; continue; }
+    if (c === '\u30fc') { out += last.slice(-1); continue; }
+    var piece = '';
+    if (ROMC[c] && small[k.charAt(i + 1)]) {
+      var v = small[k.charAt(i + 1)], pre = ROMC[c];
+      piece = (pre === 'sh' || pre === 'ch' || pre === 'j') ? pre + v : pre + v;
+      i++;
+    } else if (ROM[c] != null) piece = ROM[c];
+    else piece = c;
+    if (dbl && piece) { piece = (piece.indexOf('ch') === 0 ? 't' : piece.charAt(0)) + piece; dbl = false; }
+    out += piece; last = piece;
+  }
+  return out;
+}
+function caretFromPoint(x, y) {
+  var r = document.caretRangeFromPoint ? document.caretRangeFromPoint(x, y) : null;
+  if (r) return { node: r.startContainer, off: r.startOffset };
+  if (document.caretPositionFromPoint) { var p = document.caretPositionFromPoint(x, y); if (p) return { node: p.offsetNode, off: p.offset }; }
+  return null;
+}
+function scriptOf(ch) {
+  if (/[\u4e00-\u9fff\u3005]/.test(ch)) return 'k';
+  if (/[\u3040-\u309f]/.test(ch)) return 'h';
+  if (/[\u30a0-\u30ff]/.test(ch)) return 'c';
+  return 'o';
+}
+var ENDS = ['\u305f', '\u3066', '\u3063', '\u3063\u3066', '\u3063\u305f', '\u306a\u3044', '\u306a\u304b\u3063', '\u306a\u304b\u3063\u305f', '\u307e\u3057', '\u307e\u3057\u305f', '\u307e\u305b', '\u307e\u305b\u3093', '\u308c', '\u308c\u308b', '\u3089\u308c', '\u3089\u308c\u308b', '\u305b', '\u305b\u308b', '\u305f\u3044', '\u305f\u304f', '\u3066\u3044', '\u3044\u308b', '\u3044\u305f', '\u3044\u3066', '\u3066\u3044\u308b', '\u3066\u308b', '\u3061\u3083', '\u3070', '\u3046', '\u3088\u3046', '\u304f', '\u304b\u3063', '\u304b\u3063\u305f', '\u305a', '\u306c', '\u305d\u3046', '\u3093', '\u3059', '\u3057', '\u3055', '\u308b', '\u3059\u308b'];
+function inEnds(w) { return ENDS.indexOf(w) >= 0; }
+function hasKanji(w) { return /[\u4e00-\u9fff]/.test(w); }
+function wordAt(text, idx) {
+  var segs = null, i, t = -1;
+  try { if (window.Intl && Intl.Segmenter) segs = Array.from(new Intl.Segmenter('ja', { granularity: 'word' }).segment(text)); } catch (e) { segs = null; }
+  if (segs) {
+    for (i = 0; i < segs.length; i++) if (idx >= segs[i].index && idx < segs[i].index + segs[i].segment.length) { t = i; break; }
+    if (t < 0 || !segs[t].isWordLike) return null;
+    var a = t, b = t, w = segs[t].segment;
+    if (PARTICLES[w]) return { w: w, s: segs[t].index, e: segs[t].index + w.length };
+    var wl = function (j) { return j >= 0 && j < segs.length && segs[j].isWordLike; };
+    var hira = function (j) { return wl(j) && /^[\u3040-\u309f]+$/.test(segs[j].segment) && !PARTICLES[segs[j].segment]; };
+    var oneKanji = function (j) { return wl(j) && segs[j].segment.length === 1 && hasKanji(segs[j].segment); };
+    if (hira(t)) {
+      if (inEnds(w)) { while (hira(a - 1) && inEnds(segs[a - 1].segment)) a--; if (wl(a - 1) && hasKanji(segs[a - 1].segment)) a--; }
+      else if (oneKanji(a - 1)) a--;
+    }
+    if (oneKanji(a) && b === a && hira(b + 1)) b++;
+    while (hira(b + 1) && inEnds(segs[b + 1].segment) && b - a < 6) b++;
+    return { w: text.slice(segs[a].index, segs[b].index + segs[b].segment.length), s: segs[a].index, e: segs[b].index + segs[b].segment.length };
+  }
+  var sc = scriptOf(text.charAt(idx)), x = idx, y = idx + 1;
+  if (sc === 'o') return null;
+  while (x > 0 && scriptOf(text.charAt(x - 1)) === sc) x--;
+  while (y < text.length && scriptOf(text.charAt(y)) === sc) y++;
+  if (sc === 'k') { var n = 0; while (y < text.length && n < 2 && scriptOf(text.charAt(y)) === 'h') { y++; n++; } }
+  return { w: text.slice(x, y), s: x, e: y };
+}
+function wordRange(e, lineEl) {
+  var cp = caretFromPoint(e.clientX, e.clientY);
+  if (!cp || !cp.node || cp.node.nodeType !== 3) return null;
+  var jp = cp.node.parentNode;
+  if (!jp || !jp.classList || !jp.classList.contains('jp') || jp.parentNode !== lineEl) return null;
+  var text = cp.node.data, idx = -1, cand = [cp.off, cp.off - 1], i, rg = document.createRange(), rects, j;
+  for (i = 0; i < cand.length && idx < 0; i++) {
+    if (cand[i] < 0 || cand[i] >= text.length) continue;
+    rg.setStart(cp.node, cand[i]); rg.setEnd(cp.node, cand[i] + 1);
+    rects = rg.getClientRects();
+    for (j = 0; j < rects.length; j++) if (e.clientX >= rects[j].left - 2 && e.clientX <= rects[j].right + 2 && e.clientY >= rects[j].top - 2 && e.clientY <= rects[j].bottom + 2) { idx = cand[i]; break; }
+  }
+  if (idx < 0) return null;
+  var w = wordAt(text, idx);
+  if (!w) return null;
+  rg = document.createRange(); rg.setStart(cp.node, w.s); rg.setEnd(cp.node, w.e);
+  return { range: rg, word: w.w, node: cp.node, text: text, idx: idx };
+}
+var JPKEY = 'songbook.jpdb', jpLines = {};
+function jpKey() { try { return localStorage.getItem(JPKEY) || ''; } catch (e) { return ''; } }
+function jpParse(text, cb, keyOv) {
+  var key = keyOv || jpKey();
+  if (!key) { cb(null, 0); return; }
+  if (!keyOv && jpLines[text]) { cb(jpLines[text], 200); return; }
+  var done = false, tm = setTimeout(function () { if (!done) { done = true; cb(null, -1); } }, 9000);
+  try {
+    fetch('https://jpdb.io/api/v1/parse', { method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, token_fields: ['vocabulary_index', 'position', 'length'], position_length_encoding: 'utf16', vocabulary_fields: ['vid', 'spelling', 'reading', 'frequency_rank', 'part_of_speech', 'meanings', 'card_state', 'pitch_accent'] }) })
+      .then(function (r) { var st = r.status; return r.json().then(function (d) { return { st: st, d: d }; }, function () { return { st: st, d: null }; }); })
+      .then(function (o) {
+        if (done) return; done = true; clearTimeout(tm);
+        if (o.st !== 200 || !o.d || !o.d.tokens) { cb(null, o.st); return; }
+        var res = { tokens: o.d.tokens, vocab: o.d.vocabulary || [] };
+        if (!keyOv) jpLines[text] = res;
+        cb(res, 200);
+      })
+      .catch(function () { if (!done) { done = true; clearTimeout(tm); cb(null, -1); } });
+  } catch (e) { if (!done) { done = true; clearTimeout(tm); cb(null, -1); } }
+}
+function accentNum(pat) {
+  if (!pat) return '';
+  if (pat.charAt(0) === 'H') return '1';
+  var i = pat.lastIndexOf('H');
+  if (i < 0) return '0';
+  return i === pat.length - 1 ? '0' : String(i + 1);
+}
+function jpEntry(v, surface) {
+  var acc = [], i, a;
+  (v[7] || []).forEach(function (pt) { a = accentNum(pt); if (a !== '' && acc.indexOf(a) < 0) acc.push(a); });
+  var rank = v[3];
+  return { w: v[1], r: v[2], m: (v[5] || []).slice(0, 3), c: !!(rank && rank <= 5000), f: surface, a: acc.join(' or ') };
+}
+function jpToken(res, idx) {
+  var i, t;
+  for (i = 0; i < res.tokens.length; i++) { t = res.tokens[i]; if (idx >= t[1] && idx < t[1] + t[2]) return { s: t[1], e: t[1] + t[2], v: res.vocab[t[0]] }; }
+  return null;
+}
+function jpdbP() {
+  var has = !!jpKey();
+  return navBar(backBtn(), 'Dictionary', '<span></span>') + '<div class="body"><div class="sec">jpdb</div><div class="grp">' +
+    '<div class="fld"><label>jpdb API key' + (has ? ' \u00b7 leave empty to keep the saved one' : '') + '</label><input id="jpKeyIn" type="password" autocapitalize="none" autocorrect="off" placeholder="' + (has ? '(saved)' : 'API key from your jpdb.io settings') + '"></div>' +
+    '<div class="btnrow"><button class="sbtn pri" data-act="jpdbsave">Save and test</button>' + (has ? '<button class="sbtn red" data-act="jpdbclear">Turn off</button>' : '') + '</div></div>' +
+    '<div class="sync syncmsg" id="jpMsg">' + (has ? 'jpdb is on.' : 'Jotoba is used.') + '</div><div class="note">With a key, tapping a word asks jpdb to read the whole line, so words are cut in the right place and the pitch accent is shown. The key stays on this device and is never part of a backup or sync. If jpdb cannot be reached, Jotoba is used instead.</div></div>';
+}
+function closeWord() { if (wpop && wpop.parentNode) wpop.parentNode.removeChild(wpop); wpop = null; wcur = null; }
+function lookupWord(word, cb) {
+  var db2 = wordsLoad();
+  if (PARTICLES[word]) { cb({ w: word, r: word, m: [PARTICLES[word]], g: 1 }); return; }
+  if (db2.c[word]) { cb(db2.c[word]); return; }
+  var done = false, tm = setTimeout(function () { if (!done) { done = true; cb(null); } }, 9000);
+  try {
+    fetch('https://jotoba.de/api/search/words', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: word, language: 'English', no_english: false }) })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (done) return; done = true; clearTimeout(tm);
+        var ws = (d && d.words) || [], pick = null, i;
+        for (i = 0; i < ws.length && !pick; i++) if (ws[i].reading && (ws[i].reading.kana === word || ws[i].reading.kanji === word)) pick = ws[i];
+        if (!pick && ws.length && word.length > 1) pick = ws[0];
+        if (!pick) { cb(null); return; }
+        var rd = pick.reading || {}, m = [];
+        (pick.senses || []).slice(0, 3).forEach(function (sn) { if (sn.glosses && sn.glosses.length) m.push(sn.glosses.slice(0, 3).join(', ')); });
+        var en = { w: rd.kanji || rd.kana || word, r: rd.kana || '', m: m, c: !!pick.common, f: word };
+        if (!m.length) { cb(null); return; }
+        db2.c[word] = en; wordsSave(); cb(en);
+      })
+      .catch(function () { if (!done) { done = true; clearTimeout(tm); cb(null); } });
+  } catch (e) { if (!done) { done = true; clearTimeout(tm); cb(null); } }
+}
+function wordPopHTML(word, en) {
+  if (en === 'wait') return '<div class="wwd">' + esc(word) + '</div><div class="wnone">Looking up\u2026</div>';
+  if (!en) return '<div class="wwd">' + esc(word) + '</div><div class="wnone">No result. Check your connection and tap the word again.</div>';
+  var key = en.w, saved = !!wordsLoad().s[key], h = '<div class="wtop"><div><div class="wwd">' + esc(en.w) + '</div><div class="wrd">' + esc(toRomaji(en.r)) + (en.g ? '' : ' \u00b7 ' + esc(en.r)) + '</div></div>' + (en.g ? '' : '<button class="wstar' + (saved ? ' on' : '') + '" data-act="wstar" data-w="' + esc(key) + '" aria-label="Save word">' + (saved ? '\u2605' : '\u2606') + '</button>') + '</div>';
+  if (en.f && en.f !== en.w && en.f !== en.r) h += '<div class="wfrom">from ' + esc(en.f) + '</div>';
+  h += '<ol>' + en.m.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>';
+  if (en.c) h += '<span class="wtag">common</span>';
+  if (en.a) h += '<span class="wtag">pitch ' + esc(en.a) + '</span>';
+  return h;
+}
+function placeWord() {
+  if (!wpop || !wcur) return;
+  var pop = wpop.querySelector('.wpop'), arr = pop.querySelector('.warr'), r0 = wcur.rect0, bw = pop.offsetWidth, bh = pop.offsetHeight;
+  var cx = wcur.box.left + wcur.box.width / 2, below = r0.top - bh - 14 < 56, top = below ? r0.bottom + 14 : r0.top - bh - 14;
+  var left = Math.max(10, Math.min(cx - bw / 2, window.innerWidth - bw - 10));
+  pop.className = 'wpop' + (below ? ' below' : '');
+  pop.style.left = left + 'px'; pop.style.top = top + 'px';
+  arr.style.left = Math.max(16, Math.min(cx - left - 7, bw - 30)) + 'px';
+}
+function hlHTML(range) {
+  var rects = range.getClientRects(), i, h = '';
+  for (i = 0; i < rects.length; i++) h += '<i class="whl" style="left:' + (rects[i].left - 1) + 'px;top:' + (rects[i].top + 2) + 'px;width:' + (rects[i].width + 2) + 'px;height:' + Math.max(8, rects[i].height - 4) + 'px"></i>';
+  return h;
+}
+function openWord(info) {
+  closeWord();
+  var rects = info.range.getClientRects();
+  if (!rects.length) return;
+  var d = document.createElement('div'); d.className = 'wlayer';
+  d.innerHTML = hlHTML(info.range) + '<div class="wpop"><div class="wbody"></div><span class="warr"></span></div>';
+  document.getElementById('app').appendChild(d);
+  wpop = d; wcur = { rect0: rects[0], box: info.range.getBoundingClientRect(), word: info.word };
+  var body = d.querySelector('.wbody'), mine = wcur;
+  body.innerHTML = wordPopHTML(info.word, 'wait'); placeWord();
+  function show(word, en) { if (wcur !== mine || !wpop) return; body.innerHTML = wordPopHTML(word, en); mine.en = en; placeWord(); }
+  function viaJotoba() { lookupWord(info.word, function (en) { show(info.word, en); }); }
+  if (!jpKey() || PARTICLES[info.word] || !info.node) { viaJotoba(); return; }
+  jpParse(info.text, function (res) {
+    if (wcur !== mine || !wpop) return;
+    var tk = res ? jpToken(res, info.idx) : null;
+    if (!tk || !tk.v) { viaJotoba(); return; }
+    var surf = info.text.slice(tk.s, tk.e), rg = document.createRange();
+    try { rg.setStart(info.node, tk.s); rg.setEnd(info.node, tk.e); } catch (x) { viaJotoba(); return; }
+    var rs = rg.getClientRects();
+    if (rs.length) {
+      var old = d.querySelectorAll('.whl'), k;
+      for (k = 0; k < old.length; k++) old[k].parentNode.removeChild(old[k]);
+      d.insertAdjacentHTML('afterbegin', hlHTML(rg));
+      mine.rect0 = rs[0]; mine.box = rg.getBoundingClientRect(); mine.word = surf;
+    }
+    if (PARTICLES[surf]) { show(surf, { w: surf, r: surf, m: [PARTICLES[surf]], g: 1 }); return; }
+    show(surf, jpEntry(tk.v, surf));
+  });
+}
+function wordsP() {
+  var db2 = wordsLoad(), keys = Object.keys(db2.s), h = navBar(backBtn(), 'Saved words', '<span></span>') + '<div class="body"><h1 class="lg">Saved words</h1>';
+  if (!keys.length) return h + '<div class="grp"><div class="empty">No saved words yet. Tap a word in the current line, then the star.</div></div></div>';
+  h += '<div class="grp">';
+  keys.sort().forEach(function (k) {
+    var en = db2.s[k];
+    h += '<div class="row" style="cursor:default"><div class="sp"><b>' + esc(en.w) + '</b><small>' + esc(toRomaji(en.r)) + ' \u00b7 ' + esc((en.m || [])[0] || '') + '</small></div><button class="xround" data-act="wdel" data-w="' + esc(k) + '" aria-label="Remove"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button></div>';
+  });
+  return h + '</div></div>';
+}
 function covH(s, big) {
   return '<i class="cov' + (big ? ' art' : '') + '" style="background:' + grad(hue(s)) + '">' + (s.cover ? '<img src="' + esc(s.cover) + '" alt="" onerror="this.remove()">' : '') + '歌</i>';
 }
@@ -823,7 +1073,7 @@ function setP() {
       return '<div class="rb"><span class="rhp' + (b[3] ? ' hid' : '') + '">' + b[0] + '</span><div class="rj">' + b[1] + '</div><span class="rk">' + b[2] + '</span></div>';
     }).join('') + '<div class="rn">Middle line: romaji hidden</div></div>' +
     '<div class="sec">Your range</div><div class="grp"><div class="fld"><label>Lowest comfortable note</label><input data-u="myLow" value="' + esc(noteName(db.ui.myLow)) + '" placeholder="B2" autocapitalize="characters" autocorrect="off"></div><div class="fld"><label>Highest comfortable note</label><input data-u="myHigh" value="' + esc(noteName(db.ui.myHigh)) + '" placeholder="F#4" autocapitalize="characters" autocorrect="off"></div></div>' +
-    '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small>' + CHEV + '</div>' +
+    '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="jpdb"><div class="sp"><b>Dictionary</b><small>' + (jpKey() ? 'jpdb, with Jotoba as backup' : 'Jotoba') + '</small></div>' + CHEV + '</div><div class="row" data-act="push" data-p="words"><div class="sp"><b>Saved words</b><small>' + Object.keys(wordsLoad().s).length + ' saved from word lookups</small></div>' + CHEV + '</div><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small>' + CHEV + '</div>' +
     '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div>' + CHEV + '</div></div>' +
     '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small>' + CHEV + '</div></div></div>';
 }
@@ -855,7 +1105,7 @@ function verP() {
   }).join('') + '</div>';
 }
 function pageHTML(p) {
-  return p.p === 'ver' ? verP() : p.p === 'list' ? listP() : p.p === 'read' ? readerP(p) : (p.p === 'edit' || p.p === 'form') ? formP() : p.p === 'set' ? setP() : p.p === 'sync' ? syncP() : p.p === 'backup' ? backupP() : conflictP();
+  return p.p === 'ver' ? verP() : p.p === 'list' ? listP() : p.p === 'read' ? readerP(p) : (p.p === 'edit' || p.p === 'form') ? formP() : p.p === 'set' ? setP() : p.p === 'words' ? wordsP() : p.p === 'jpdb' ? jpdbP() : p.p === 'sync' ? syncP() : p.p === 'backup' ? backupP() : conflictP();
 }
 
 /* ---------- render ---------- */
@@ -886,6 +1136,7 @@ function setPanel(open) {
 }
 function render(keep) {
   if (!db) return;
+  if (wpop) closeWord();
   scaffold();
   var ip = pmode() && !settle;
   app.classList.toggle('ipad', ipadMode()); app.classList.toggle('pm', ip); app.classList.toggle('land', landscape()); app.classList.toggle('pOpen', ip && panelOpen);
@@ -1049,6 +1300,7 @@ function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro 
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
 /* ---------- events ---------- */
+document.addEventListener('scroll', function () { if (wpop) closeWord(); }, true);
 (function () {
   /* the song panel follows the finger both ways; start at the left edge to open, anywhere outside the lyrics (panel, cover area, empty space) to close */
   var W = 378, g = null;
@@ -1111,6 +1363,7 @@ document.addEventListener('click', function (e) {
   document.addEventListener('touchend', function (e) { if (x0 !== null && e.changedTouches[0].clientX - x0 < -60) setPanel(false); x0 = null; }, { passive: true });
 })();
 document.addEventListener('click', function (e) {
+  if (wpop && !(e.target.closest && e.target.closest('.wpop'))) closeWord();
   var t = e.target.closest ? e.target.closest('[data-act]') : null;
   if (!t || !db) return;
   var act = t.getAttribute('data-act'), i = +t.getAttribute('data-i'), k = t.getAttribute('data-k'), id = t.getAttribute('data-id'), s;
@@ -1130,6 +1383,7 @@ document.addEventListener('click', function (e) {
   if (act === 'conflict') { push({ p: 'conflict', id: id }); return; }
   if (act === 'line') {
     if (t.parentNode && t.parentNode.id === 'sc') {
+      if (i === curLine) { var wi = wordRange(e, t); if (wi) { openWord(wi); return; } }
       curLine = i;
       var ls = document.querySelectorAll('.al'), j;
       for (j = 0; j < ls.length; j++) { if (j === i) ls[j].classList.add('act'); else ls[j].classList.remove('act'); }
@@ -1146,6 +1400,12 @@ document.addEventListener('click', function (e) {
     var ck = document.querySelector('.vmenu [data-k="' + k + '"] .ck'); if (ck) ck.textContent = db.ui.hide[k] ? '' : '✓';
     return;
   }
+  if (act === 'wstar') {
+    var wk = t.getAttribute('data-w'), wd = wordsLoad();
+    if (wd.s[wk]) delete wd.s[wk]; else if (wcur && wcur.en) wd.s[wk] = { w: wcur.en.w, r: wcur.en.r, m: wcur.en.m };
+    wordsSave(); t.classList.toggle('on', !!wd.s[wk]); t.textContent = wd.s[wk] ? '\u2605' : '\u2606'; return;
+  }
+  if (act === 'wdel') { delete wordsLoad().s[t.getAttribute('data-w')]; wordsSave(); render(true); return; }
   if (act === 'vmenu') { setVMenu(!vmenu); return; }
   if (act === 'kopen') { sheet = true; sheetKind = 'key'; an.s = 1; render(true); return; }
   if (act === 'kshift' || act === 'kmin' || act === 'taptempo') {
@@ -1222,6 +1482,18 @@ document.addEventListener('click', function (e) {
     try { localStorage.setItem(SYNCKEY, JSON.stringify(nc)); } catch (x) { setSync('Could not save settings on this device.'); return; }
     cfg = nc; sync(); return;
   }
+  if (act === 'jpdbsave') {
+    var jk = document.getElementById('jpKeyIn').value.replace(/\s/g, ''), jm = document.getElementById('jpMsg'), use = jk || jpKey();
+    if (!use) { jm.textContent = 'Paste your jpdb API key first.'; return; }
+    jm.textContent = 'Testing\u2026';
+    jpParse('\u4f1a\u3046', function (res, st) {
+      if (!res) { jm.textContent = (st === 403 || st === 401) ? 'jpdb did not accept that key.' : 'Could not reach jpdb. Check your connection and try again.'; return; }
+      try { localStorage.setItem(JPKEY, use); } catch (x) { jm.textContent = 'Could not save the key on this device.'; return; }
+      jpLines = {}; render(true);
+    }, use);
+    return;
+  }
+  if (act === 'jpdbclear') { try { localStorage.removeItem(JPKEY); } catch (x) {} jpLines = {}; render(true); return; }
   if (act === 'cfgclear') { try { localStorage.removeItem(SYNCKEY); } catch (x) {} cfg = null; syncMsg = ''; render(true); return; }
   if (act === 'keepmine' || act === 'keeptheirs' || act === 'keepboth') {
     var cid = cp().id, th = conf[cid], ix = findSong(cid), mine = ix < 0 ? null : db.songs[ix];
