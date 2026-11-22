@@ -247,7 +247,27 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .layer.panel .fab{left:auto;right:16px;bottom:16px}
 #app.pOpen .layer.topl [data-act=panel]{opacity:0;pointer-events:none}
 .row.sel{background:rgba(250,45,72,.26)}
-.layer.fade{animation:fadein .28s ease-out}</style>
+.layer.fade{animation:fadein .28s ease-out}
+.kbtn{position:absolute;right:calc(max(16px,env(safe-area-inset-right,0px)) + 64px);bottom:calc(env(safe-area-inset-bottom,0px) + 18px);z-index:30;width:54px;height:54px;border-radius:50%;border:0;color:#fff;display:flex;align-items:center;justify-content:center;padding:0;font-size:22px}
+.kbtn::after{content:'';position:absolute;inset:-10px}
+@container lay (min-width:780px){@media (min-height:560px){.kbtn{display:none}}}
+.kinfo{margin-top:16px;border-radius:18px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);padding:10px 12px;--mu:rgba(255,255,255,.55);--line:rgba(255,255,255,.1);--fg:#fff;--glassb:rgba(255,255,255,.14);color:#fff}
+.kt{--lw:60px}.kt.cp{--lw:38px}
+.kth,.ktr{display:grid;grid-template-columns:calc(var(--lw)*2) 1fr var(--lw) var(--lw);align-items:center}
+.kth{color:var(--mu);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding-bottom:4px}
+.ktr{padding:10px 0;border-bottom:1px solid var(--line)}.ktr b{font-weight:600;font-size:14px}.ktr .l{color:var(--mu);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.kt.cp .ktr{padding:7px 0}.kt.cp .ktr b{font-size:12.5px;white-space:nowrap}.kt.cp .ktr .l{font-size:10px}
+.kt .c{text-align:center}.kt .red{color:#ff7a7a}.kt .km{font-size:.68em;font-weight:600;margin-left:1px}
+.kt svg{display:block;margin:8px auto 4px}
+.kchg{display:grid;grid-template-columns:44px 72px 44px;justify-content:center;align-items:center;gap:10px;padding:10px 0 0}.kchg button{width:44px;height:44px;border-radius:50%;border:0;background:var(--glassb);color:var(--fg);font-size:24px;line-height:1;padding:0}.kchg b{text-align:center;font-size:22px}
+.kt.cp .kchg{grid-template-columns:36px 60px 36px;padding-top:4px}.kt.cp .kchg button{width:36px;height:36px;font-size:20px}.kt.cp .kchg b{font-size:19px}
+.tapb{border:0;border-radius:999px;background:#fa2d48;color:#fff;font-weight:700;font-size:12.5px;padding:7px 14px;grid-column:3/5;justify-self:center}
+.sheet.ksheet{display:block;padding:12px 18px 18px;background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--fg);max-height:90%;overflow:auto}
+.ksheet h3{margin:0 0 6px;font-size:18px}.ksheet .grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.ksheet .kt button.tapb{font-size:12.5px;padding:7px 14px;border-radius:999px;background:#fa2d48;color:#fff}
+.krow{display:flex;gap:10px;align-items:center}.krow input,.krow select{flex:1;min-width:0}.krow .seg{margin:0;flex:none;width:auto}
+.cover.ki{width:250px}.cover.ki .art{width:210px;height:210px;font-size:88px}.cover.ki .ct{margin-top:14px}
+</style>
 </head>
 <body>
 <div id="app">Loading…</div>
@@ -255,8 +275,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.7.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.8.0';
 var CHANGES = [
+  { v: '1.8.0', d: '22 Nov 2026', t: 'Key, range and BPM', s: 'Each song can hold its key, the singer\'s lowest and highest note and the BPM, with a key changer that checks your own range.', n: ['New Key & range group in the song details: original key, lowest and highest note, BPM with Tap, and your key shift', 'Your range is set once in Settings; notes outside it show in red', 'iPad: the table sits under the album cover. iPhone and portrait: the ♪ button opens it as a sheet', 'A pitch graph appears when a song has pitch data'] },
   { v: '1.7.1', d: '22 Nov 2026', t: 'Tidier settings', s: 'One preview in Settings shows both the text size and the hidden romaji style.', n: ['Settings: the two samples are now one preview with three lines, so text size and hidden romaji can be tuned together'] },
   { v: '1.7.0', d: '22 Nov 2026', t: 'One link per song', s: 'A song now has one link, Spotify or UtaTime, shared by the cover finder and saved with the song.', n: ['New Song link field at the top of the details, saved and synced with the song', 'Find covers uses that link, along with the title and artist'] },
   { v: '1.6.0', d: '22 Nov 2026', t: 'Collapsing translations', s: 'Hiding the translation now folds the line away, romaji blurs when hidden, and Japanese can no longer be hidden.', n: ['Settings: choose how hidden romaji looks, Blur or Glow, as a light hint or a strong hide', 'Hiding the translation closes its row and the lines move up; showing it opens each row downward from the Japanese line', 'Hidden romaji is blurred and keeps its place', 'The language menu no longer has Japanese, so it is always shown', 'Home fades the panel into the page colours instead of ending grey then black', 'A second finger during a panel drag no longer freezes the panel halfway'] },
@@ -295,7 +316,7 @@ function blankLine() { return { ro: '', jp: '', en: '', note: '' }; }
 function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', link: '', notes: '', lines: [] }); }
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
-  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light';
+  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.myLow = +d.ui.myLow || 0; d.ui.myHigh = +d.ui.myHigh || 0; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light';
   d.ui.sz = (d.ui.sz === 0 || d.ui.sz > 0) && d.ui.sz < 4 ? Math.floor(d.ui.sz) : 1;
   d.ui.theme = d.ui.theme === 'light' || d.ui.theme === 'dark' ? d.ui.theme : 'system';
   d.ui.strip = d.ui.strip || {}; if (d.ui.strip.sq == null) d.ui.strip.sq = 1; if (d.ui.strip.cjk == null) d.ui.strip.cjk = 1; if (d.ui.strip.rd == null) d.ui.strip.rd = 0;
@@ -309,6 +330,8 @@ function normSong(s) {
   s.lines.forEach(function (l) { l.ro = l.ro || ''; l.jp = l.jp || ''; l.en = l.en || ''; l.note = l.note || ''; });
   s.paste = s.paste || {}; s.paste.jp = s.paste.jp || ''; s.paste.ro = s.paste.ro || ''; s.paste.en = s.paste.en || '';
   s.cover = s.cover || ''; s.src = s.src || {}; s.src.jp = s.src.jp || ''; s.src.ro = s.src.ro || ''; s.src.en = s.src.en || '';
+  s.kpc = (typeof s.kpc === 'number' && s.kpc >= 0 && s.kpc < 12) ? Math.floor(s.kpc) : -1; s.kmin = !!s.kmin; s.kshift = Math.max(-12, Math.min(12, Math.round(+s.kshift || 0)));
+  s.lo = +s.lo || 0; s.hi = +s.hi || 0; s.bpm = +s.bpm || 0; s.pitch = (s.pitch && s.pitch.length) ? s.pitch : [];
   s.sha = s.sha || ''; s.dirty = !!s.dirty; s.updated = +s.updated || 0;
   return s;
 }
@@ -443,7 +466,7 @@ function api(method, path, body) {
     return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { status: r.status, json: j }; });
   });
 }
-function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, link: s.link, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
+function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, link: s.link, kpc: s.kpc, kmin: s.kmin, kshift: s.kshift, lo: s.lo, hi: s.hi, bpm: s.bpm, pitch: s.pitch, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
 function findSong(id) { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === id) return i; return -1; }
 function fetchSong(id) {
   return api('GET', '/contents/songs/' + id + '.json').then(function (r) {
@@ -550,6 +573,87 @@ function hue(s) {
   return h;
 }
 function grad(h) { return 'linear-gradient(135deg,hsl(' + h + ',80%,58%),hsl(' + ((h + 140) % 360) + ',70%,45%))'; }
+/* ---------- key, range and BPM ---------- */
+var KEYMAJ = ['C', 'D\u266d', 'D', 'E\u266d', 'E', 'F', 'G\u266d', 'G', 'A\u266d', 'A', 'B\u266d', 'B'];
+var KEYMIN = ['C', 'C\u266f', 'D', 'E\u266d', 'E', 'F', 'F\u266f', 'G', 'G\u266f', 'A', 'B\u266d', 'B'];
+var NOTEN = ['C', 'C\u266f', 'D', 'D\u266f', 'E', 'F', 'F\u266f', 'G', 'G\u266f', 'A', 'A\u266f', 'B'];
+var tapT = [];
+function noteName(m) { return m > 0 ? NOTEN[m % 12] + (Math.floor(m / 12) - 1) : ''; }
+function parseNote(str) {
+  var m = /^\s*([A-Ga-g])\s*([#\u266f\u266d]|b)?\s*(-?\d)\s*$/.exec(str || '');
+  if (!m) return 0;
+  var base = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 }[m[1].toLowerCase()];
+  var acc = (m[2] === '#' || m[2] === '\u266f') ? 1 : (m[2] === 'b' || m[2] === '\u266d') ? -1 : 0;
+  var v = 12 * (parseInt(m[3], 10) + 1) + base + acc;
+  return v > 0 && v < 128 ? v : 0;
+}
+function keyHTML(pc, minor) { return esc(minor ? KEYMIN[pc] : KEYMAJ[pc]) + (minor ? '<span class="km">m</span>' : ''); }
+function shiftText(n) { return n > 0 ? '+' + n : n < 0 ? '\u2212' + (-n) : '0'; }
+function hasKey(s) { return !!(s && (s.kpc >= 0 || s.lo || s.hi || s.bpm || (s.pitch && s.pitch.length > 1))); }
+function pitchSegs(P, sh) {
+  var out = [], cur = [], i;
+  for (i = 0; i < P.length; i++) { if (!P[i][1]) { if (cur.length === 1) cur.push([cur[0][0] + 0.8, cur[0][1]]); if (cur.length > 1) out.push(cur); cur = []; } else cur.push([P[i][0], P[i][1] + sh]); }
+  if (cur.length === 1) cur.push([cur[0][0] + 0.8, cur[0][1]]);
+  if (cur.length > 1) out.push(cur);
+  return out;
+}
+function bezier(pts, X, Y) {
+  var Q = pts.map(function (q) { return [X(q[0]), Y(q[1])]; }), d = 'M' + Q[0][0] + ',' + Q[0][1], i;
+  for (i = 0; i < Q.length - 1; i++) {
+    var p0 = Q[i - 1] || Q[i], p1 = Q[i], p2 = Q[i + 1], p3 = Q[i + 2] || p2;
+    d += ' C' + (p1[0] + (p2[0] - p0[0]) / 6) + ',' + (p1[1] + (p2[1] - p0[1]) / 6) + ' ' + (p2[0] - (p3[0] - p1[0]) / 6) + ',' + (p2[1] - (p3[1] - p1[1]) / 6) + ' ' + p2[0] + ',' + p2[1];
+  }
+  return d;
+}
+/* the sung melody as a smooth curve: time across, pitch up; the part outside your range turns red */
+function keyGraphHTML(s, cp) {
+  var P = s.pitch || [];
+  if (P.length < 2) return '';
+  var sh = s.kshift || 0, W = cp ? 222 : 323, H = cp ? 112 : 190, L = 30, T = 8, B = 20, R = 4;
+  var mylo = db.ui.myLow || 0, myhi = db.ui.myHigh || 0, ms = [], t1 = 1, i;
+  for (i = 0; i < P.length; i++) { if (P[i][1]) ms.push(P[i][1]); if (P[i][0] > t1) t1 = P[i][0]; }
+  if (!ms.length) return '';
+  var lo = Math.min.apply(null, ms), hi = Math.max.apply(null, ms);
+  var mn = Math.min(lo + Math.min(sh, 0), mylo || 999) - 3, mx = Math.max(hi + Math.max(sh, 0), myhi || 0) + 3;
+  var X = function (t) { return L + t / t1 * (W - L - R); }, Y = function (m) { return T + (mx - m) / (mx - mn) * (H - T - B); };
+  var id = 'kc' + (cp ? 'p' : 's'), g = '', n;
+  if (mylo && myhi) {
+    g += '<rect x="' + L + '" y="' + Y(myhi + .5) + '" width="' + (W - L - R) + '" height="' + (Y(mylo - .5) - Y(myhi + .5)) + '" rx="6" fill="#7ee0a1" opacity=".14"/>';
+    g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(myhi + .5) + '" y2="' + Y(myhi + .5) + '" stroke="#7ee0a1" stroke-opacity=".5" stroke-dasharray="3 3"/><line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(mylo - .5) + '" y2="' + Y(mylo - .5) + '" stroke="#7ee0a1" stroke-opacity=".5" stroke-dasharray="3 3"/>';
+  }
+  for (n = Math.ceil(mn / 12) * 12; n <= mx; n += 12) {
+    g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(n) + '" y2="' + Y(n) + '" stroke="currentColor" stroke-opacity=".1"/><text x="' + (L - 5) + '" y="' + (Y(n) + 4) + '" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".55">C' + (n / 12 - 1) + '</text>';
+  }
+  for (n = 60; n < t1; n += 60) g += '<text x="' + X(n) + '" y="' + (H - 5) + '" font-size="10" fill="currentColor" opacity=".55" text-anchor="middle">' + (n / 60) + 'm</text>';
+  if (sh) pitchSegs(P, 0).forEach(function (q) { g += '<path d="' + bezier(q, X, Y) + '" fill="none" stroke="currentColor" stroke-opacity=".45" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round"/>'; });
+  var mine = pitchSegs(P, sh);
+  mine.forEach(function (q) { g += '<path d="' + bezier(q, X, Y) + '" fill="none" stroke="#f5c542" stroke-width="2.2" stroke-linecap="round"/>'; });
+  if (myhi || mylo) {
+    var clip = '';
+    if (myhi) clip += '<clipPath id="' + id + 'a"><rect x="' + L + '" y="0" width="' + (W - L - R) + '" height="' + Y(myhi + .5) + '"/></clipPath>';
+    if (mylo) clip += '<clipPath id="' + id + 'b"><rect x="' + L + '" y="' + Y(mylo - .5) + '" width="' + (W - L - R) + '" height="' + H + '"/></clipPath>';
+    g += clip;
+    [myhi ? 'a' : '', mylo ? 'b' : ''].forEach(function (c) {
+      if (!c) return;
+      g += '<g clip-path="url(#' + id + c + ')">';
+      mine.forEach(function (q) { g += '<path d="' + bezier(q, X, Y) + '" fill="none" stroke="#ff7a7a" stroke-width="2.8" stroke-linecap="round"/>'; });
+      g += '</g>';
+    });
+  }
+  return '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">' + g + '</svg>';
+}
+function keyTableHTML(s, cp) {
+  var sh = s.kshift || 0, mylo = db.ui.myLow || 0, myhi = db.ui.myHigh || 0;
+  var pcs = s.kpc >= 0 ? (((s.kpc + sh) % 12) + 12) % 12 : -1;
+  var nl = s.lo ? s.lo + sh : 0, nh = s.hi ? s.hi + sh : 0;
+  var h = '<div class="kt' + (cp ? ' cp' : '') + '"><div class="kth"><span></span><span class="c">Key</span><span class="c">Low</span><span class="c">High</span></div>';
+  h += '<div class="ktr"><span class="l">Original</span><b class="c">' + (s.kpc >= 0 ? keyHTML(s.kpc, s.kmin) : '\u2013') + '</b><b class="c">' + (s.lo ? noteName(s.lo) : '\u2013') + '</b><b class="c">' + (s.hi ? noteName(s.hi) : '\u2013') + '</b></div>';
+  h += '<div class="ktr"><span class="l">BPM</span><b class="c">' + (s.bpm || '\u2013') + '</b>' + (cp ? '<span></span><span></span>' : '<button class="tapb" data-act="taptempo">Tap</button>') + '</div>';
+  h += keyGraphHTML(s, cp);
+  h += '<div class="ktr" style="border:0"><span class="l">My</span><b class="c">' + (pcs >= 0 ? keyHTML(pcs, s.kmin) : '\u2013') + '</b><b class="c' + (nl && mylo && nl < mylo ? ' red' : '') + '">' + (nl ? noteName(nl) : '\u2013') + '</b><b class="c' + (nh && myhi && nh > myhi ? ' red' : '') + '">' + (nh ? noteName(nh) : '\u2013') + '</b></div>';
+  h += '<div class="kchg"><button data-act="kshift" data-k="-1" aria-label="Lower the key">\u2039</button><b>' + shiftText(sh) + '</b><button data-act="kshift" data-k="1" aria-label="Raise the key">\u203a</button></div></div>';
+  return h;
+}
 function covH(s, big) {
   return '<i class="cov' + (big ? ' art' : '') + '" style="background:' + grad(hue(s)) + '">' + (s.cover ? '<img src="' + esc(s.cover) + '" alt="" onerror="this.remove()">' : '') + '歌</i>';
 }
@@ -600,7 +704,7 @@ function readerP(p) {
     '<i class="blob" style="width:520px;height:520px;color:hsl(' + h1 + ',85%,58%);left:-160px;top:-120px"></i>' +
     '<i class="blob" style="width:600px;height:600px;color:hsl(' + h2 + ',75%,55%);right:-200px;bottom:-160px"></i>' +
     navBar(backBtn(), esc(name), '<button class="pill round glass" data-act="edit" data-id="' + s.id + '" aria-label="Edit">' + PEN + '</button>') +
-    '<div class="cover">' + covH(s, true) + '<div class="ct">' + esc(name) + '</div><div class="ca">' + esc(s.artist) + (s.artist && s.artistRo ? ' · ' : '') + esc(s.artistRo) + '</div></div><div class="ly" id="sc">';
+    '<div class="cover' + (hasKey(s) ? ' ki' : '') + '">' + covH(s, true) + '<div class="ct">' + esc(name) + '</div><div class="ca">' + esc(s.artist) + (s.artist && s.artistRo ? ' · ' : '') + esc(s.artistRo) + '</div>' + (hasKey(s) ? '<div class="kinfo">' + keyTableHTML(s, true) + '</div>' : '') + '</div><div class="ly" id="sc">';
   s.lines.forEach(function (l, i) {
     h += '<div class="al' + (i === curLine ? ' act' : '') + '" data-act="line" data-i="' + i + '">' +
       (l.ro ? '<span class="ro' + (hide.ro ? ' hid' : '') + '">' + esc(l.ro) + '</span>' : '') +
@@ -612,6 +716,7 @@ function readerP(p) {
   if (s.notes) h += '<div class="anote">' + esc(s.notes) + '</div>';
   h += '</div>';
   h += '<button class="eyebtn glass" data-act="vmenu" aria-label="Show or hide languages">' + EYE + '</button>';
+  if (hasKey(s)) h += '<button class="kbtn glass" data-act="kopen" aria-label="Key, range and BPM">\u266a</button>';
   if (vmenu) h += '<div class="mscrim" data-act="vclose"></div>' + vmenuHTML(s, an.v);
   return h + '</div>';
 }
@@ -681,6 +786,11 @@ function formP() {
     '<div class="fld"><label>Artist (kanji)</label><input data-f="artist" value="' + esc(s.artist) + '"></div>' +
     '<div class="fld"><label>Artist (romaji)</label><input data-f="artistRo" value="' + esc(s.artistRo) + '"></div>' +
     '<div class="fld"><label>Notes (shown at the end of the song)</label><textarea data-f="notes" style="min-height:60px">' + esc(s.notes) + '</textarea></div></div>';
+  h += '<div class="sec">Key &amp; range</div><div class="grp">' +
+    '<div class="fld"><label>Original key</label><div class="krow"><select data-n="kpc"><option value="-1">\u2013</option>' + KEYMAJ.map(function (nm, i) { return '<option value="' + i + '"' + (s.kpc === i ? ' selected' : '') + '>' + (s.kmin ? KEYMIN[i] : nm) + '</option>'; }).join('') + '</select><div class="seg solo"><button data-act="kmin" data-k="0" class="' + (!s.kmin ? 'on' : '') + '">Major</button><button data-act="kmin" data-k="1" class="' + (s.kmin ? 'on' : '') + '">Minor</button></div></div></div>' +
+    '<div class="fld"><label>Lowest and highest note of the original singer</label><div class="krow"><input data-n="lo" value="' + esc(noteName(s.lo)) + '" placeholder="E3" autocapitalize="characters" autocorrect="off"><input data-n="hi" value="' + esc(noteName(s.hi)) + '" placeholder="A4" autocapitalize="characters" autocorrect="off"></div></div>' +
+    '<div class="fld"><label>BPM</label><div class="krow"><input data-n="bpm" inputmode="numeric" value="' + (s.bpm || '') + '" placeholder="92"><button class="sbtn pri" data-act="taptempo">Tap</button></div></div>' +
+    '<div class="fld"><label>My key, shifted from the original</label><div class="kt"><div class="kchg"><button data-act="kshift" data-k="-1" aria-label="Lower the key">\u2039</button><b>' + shiftText(s.kshift) + '</b><button data-act="kshift" data-k="1" aria-label="Raise the key">\u203a</button></div></div></div></div>';
   h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the song link, title and artist') + '</small></div></div>' +
     '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="xround" data-act="nocover" aria-label="Remove cover"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
     (covers.length ? '<div class="covers">' + covers.map(function (c, i) { return '<div class="cv' + (s.cover === c.u ? ' sel' : '') + '" data-act="cover" data-i="' + i + '"><i><img src="' + esc(c.u) + '" alt=""></i>' + esc(c.l) + '</div>'; }).join('') + '</div>' : '') + '</div>';
@@ -711,6 +821,7 @@ function setP() {
     '<div class="sec">Preview · text size and hidden romaji</div><div class="rhbox" style="--k:' + KS[db.ui.sz] + '">' + [['Sample line number one', 'サンプルの一行目', 'The sample line number one', false], ['Another example line', '別の例の行', 'Another example line here', true], ['A short one', '短い行', 'A short one', false]].map(function (b) {
       return '<div class="rb"><span class="rhp' + (b[3] ? ' hid' : '') + '">' + b[0] + '</span><div class="rj">' + b[1] + '</div><span class="rk">' + b[2] + '</span></div>';
     }).join('') + '<div class="rn">Middle line: romaji hidden</div></div>' +
+    '<div class="sec">Your range</div><div class="grp"><div class="fld"><label>Lowest comfortable note</label><input data-u="myLow" value="' + esc(noteName(db.ui.myLow)) + '" placeholder="B2" autocapitalize="characters" autocorrect="off"></div><div class="fld"><label>Highest comfortable note</label><input data-u="myHigh" value="' + esc(noteName(db.ui.myHigh)) + '" placeholder="F#4" autocapitalize="characters" autocorrect="off"></div></div>' +
     '<div class="sec">Library</div><div class="grp"><div class="row" data-act="push" data-p="sync"><div class="sp"><b>Sync</b><small>' + (cfg ? esc(cfg.owner + '/' + cfg.repo) : 'Off') + '</small></div><small class="syncmsg">' + esc(cfg ? syncMsg : '') + '</small>' + CHEV + '</div>' +
     '<div class="row" data-act="push" data-p="backup"><div class="sp"><b>Backup</b><small>Copy or restore your songs as text</small></div>' + CHEV + '</div></div>' +
     '<div class="sec">About</div><div class="grp"><div class="row" data-act="push" data-p="ver"><div class="sp"><b>Version</b><small>What changed in each update</small></div><small>' + VER + '</small>' + CHEV + '</div></div></div>';
@@ -756,6 +867,7 @@ function centre(smooth) {
 }
 function sheetHTML() {
   var cls = an.s ? ' in' : '';
+  if (sheetKind === 'key') { var ks = song(); if (ks) return '<div class="scrim' + cls + '" data-act="keep"></div><div class="sheet ksheet' + cls + '"><div class="grab"></div><h3>Key, range and BPM</h3>' + keyTableHTML(ks, false) + '</div>'; }
   var body = sheetKind === 'clearpaste'
     ? '<div class="sheetnote">Clear the pasted ' + ({ jp: 'Japanese', ro: 'romaji', en: 'English' })[sheetArg] + ' lyrics? Lines already in the list stay as they are.</div><button class="red" data-act="doclrpaste">Clear pasted lyrics</button><button data-act="keep">Cancel</button>'
     : '<button class="red" data-act="discard">Discard song</button><button data-act="keep">Keep editing</button>';
@@ -932,7 +1044,7 @@ function findCovers(s) {
   }).catch(function () { coverMsg = 'Could not reach the cover catalogue. Check your connection.'; render(true); });
 }
 function resetDraft() { draft = blank(); covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
-function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.link || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
+function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.link || s.kpc >= 0 || s.lo || s.hi || s.bpm || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
 /* ---------- events ---------- */
@@ -952,7 +1064,7 @@ function updateAlign() { var el = document.getElementById('align'), s = fs(); if
     if (!db || !pmode() || sheet || e.touches.length !== 1) return;
     var t = e.touches[0], tg = e.target;
     if (!panelOpen) { if (t.clientX > 30) return; }
-    else if (tg.closest && (tg.closest('.ly') || tg.closest('.eyebtn') || tg.closest('.vmenu') || tg.closest('.sheet'))) return;
+    else if (tg.closest && (tg.closest('.ly') || tg.closest('.eyebtn') || tg.closest('.kbtn') || tg.closest('.ksheet') || tg.closest('.vmenu') || tg.closest('.sheet'))) return;
     var pn = document.querySelector('.layer.panel'); if (!pn) return;
     g = { id: t.identifier, x: t.clientX, y: t.clientY, open: panelOpen, on: false, pn: pn, off: panelOpen ? 0 : -W, cur: panelOpen ? 0 : -W, v: 0, lx: t.clientX, lt: Date.now() };
   }, { passive: true });
@@ -990,7 +1102,7 @@ function updateAlign() { var el = document.getElementById('align'), s = fs(); if
   document.addEventListener('touchcancel', end, { passive: true });
 })();
 document.addEventListener('click', function (e) {
-  if (db && pmode() && panelOpen && landscape() && e.target.closest && e.target.closest('.layer.topl') && !e.target.closest('.nav') && !e.target.closest('.eyebtn') && !e.target.closest('.vmenu') && !e.target.closest('.mscrim') && !e.target.closest('[data-act=vmenu]')) setPanel(false);
+  if (db && pmode() && panelOpen && landscape() && e.target.closest && e.target.closest('.layer.topl') && !e.target.closest('.nav') && !e.target.closest('.eyebtn') && !e.target.closest('.kbtn') && !e.target.closest('.vmenu') && !e.target.closest('.mscrim') && !e.target.closest('[data-act=vmenu]')) setPanel(false);
 });
 (function () {
   var x0 = null;
@@ -1034,6 +1146,20 @@ document.addEventListener('click', function (e) {
     return;
   }
   if (act === 'vmenu') { setVMenu(!vmenu); return; }
+  if (act === 'kopen') { sheet = true; sheetKind = 'key'; an.s = 1; render(true); return; }
+  if (act === 'kshift' || act === 'kmin' || act === 'taptempo') {
+    var ks = fs(); if (!ks) return;
+    if (act === 'kshift') ks.kshift = Math.max(-12, Math.min(12, (ks.kshift || 0) + (+k)));
+    else if (act === 'kmin') ks.kmin = k === '1';
+    else {
+      var nowT = Date.now();
+      if (!tapT.length || nowT - tapT[tapT.length - 1] > 2500) tapT = [];
+      tapT.push(nowT); if (tapT.length > 8) tapT.shift();
+      if (tapT.length < 2) return;
+      ks.bpm = Math.round(60000 / ((tapT[tapT.length - 1] - tapT[0]) / (tapT.length - 1)));
+    }
+    touch(ks); if (ks !== draft) save(); render(true); return;
+  }
   if (act === 'vclose') { setVMenu(false); return; }
   if (act === 'rs' || act === 'rl') { db.ui[act] = k; save(); applyRH(); render(true); return; }
   if (act === 'theme') { db.ui.theme = k; save(); applyTheme(); render(true); return; }
@@ -1125,7 +1251,13 @@ document.addEventListener('input', function (e) {
   var t = e.target; if (!db) return;
   var fw = t.closest && t.closest('.fw'); if (fw) fw.classList.toggle('has', !!t.value);
   if (t.id === 'q') { query = t.value; var pos = t.selectionStart; render(true); var q2 = document.getElementById('q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (x) {} } return; }
+  if (t.hasAttribute('data-u')) { db.ui[t.getAttribute('data-u')] = parseNote(t.value); save(); return; }
   var s = fs();
+  if (t.hasAttribute('data-n')) {
+    var ns = fs(), nk = t.getAttribute('data-n');
+    if (ns) { ns[nk] = nk === 'kpc' ? (parseInt(t.value, 10) >= 0 ? parseInt(t.value, 10) : -1) : nk === 'bpm' ? (parseInt(t.value, 10) || 0) : parseNote(t.value); touch(ns); if (ns !== draft) save(); }
+    return;
+  }
   if (t.hasAttribute('data-p')) { var ps = fs(); if (ps) { ps.paste[t.getAttribute('data-p')] = t.value; touch(ps); if (ps !== draft) save(); } return; }
   if (!s) return;
   if (t.hasAttribute('data-f')) {
