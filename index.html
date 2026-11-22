@@ -291,8 +291,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.2';
 var CHANGES = [
+  { v: '1.12.2', d: '22 Nov 2026', t: 'Romaji splits for kanji words', s: 'A space in the romaji line now also splits words that contain kanji, like fushigi na and ano ko.', n: ['The romaji split works on words with kanji too, when the cut falls at a kanji or kana edge (for example 不思議 | な and あの | 子)', 'Load all words reads those split parts as well'] },
   { v: '1.12.1', d: '22 Nov 2026', t: 'Offline covers fix', s: 'Covers now show offline, and Load all words also saves split words and says exactly what it did.', n: ['Album covers are saved on this device the first time they load, so they show offline', 'Load all words also reads the parts created by spaces in your romaji line', 'The Done message now tells you how many different lines were read, how many repeated lines were skipped, the split words, and the kanji in the song'] },
   { v: '1.12.0', d: '22 Nov 2026', t: 'Romaji word splits', s: 'A space in the romaji line now splits a kana word in the lookup.', n: ['If the romaji line has a space inside a word written in kana (for example ita tte), tapping that word looks up each part on its own', 'The \u201cfrom\u201d line is gone from the word bubble'] },
   { v: '1.11.1', d: '22 Nov 2026', t: 'Bigger cover', s: 'On iPad the cover is as wide as the key table below it again.', n: ['The cover is no longer shrunk when the key table is shown; it matches the table width'] },
@@ -924,7 +925,7 @@ function loadAllWords(song) {
         nl++;
         res.vocab.forEach(function (v) { kanjiOf(v[1]).forEach(function (c) { kan[c] = 1; }); });
         res.tokens.forEach(function (t) {
-          var sf = ln.jp.slice(t[1], t[1] + t[2]), cuts = romajiCuts(sf, ln.ro), pts, j, pc;
+          var sf = ln.jp.slice(t[1], t[1] + t[2]), cuts = romajiCuts(sf, ln.ro, res.vocab[t[0]]), pts, j, pc;
           if (!cuts.length) return;
           pts = [0].concat(cuts, [sf.length]);
           for (j = 0; j < pts.length - 1; j++) { pc = sf.slice(pts[j], pts[j + 1]); if (pc && !pseen[pc] && !PARTICLES[pc]) { pseen[pc] = 1; pieces.push(pc); } }
@@ -1000,9 +1001,33 @@ function hlHTML(range) {
   for (i = 0; i < rects.length; i++) h += '<i class="whl" style="left:' + (rects[i].left - 1) + 'px;top:' + (rects[i].top + 2) + 'px;width:' + (rects[i].width + 2) + 'px;height:' + Math.max(8, rects[i].height - 4) + 'px"></i>';
   return h;
 }
-function romajiCuts(surf, ro) {
-  if (!/^[\u3040-\u30ff]+$/.test(surf) || surf.length < 2) return [];
-  var r = toRomaji(surf).toLowerCase().replace(/[^a-z]/g, ''), words = String(ro || '').toLowerCase().split(/\s+/), letters = '', bnd = [], i, k, p, best = null;
+function toHira(c) { var n = c.charCodeAt(0); return (n >= 0x30a1 && n <= 0x30f6) ? String.fromCharCode(n - 0x60) : c; }
+function isKanaCh(c) { return /[\u3040-\u30ff]/.test(c); }
+function surfRead(surf, v) {
+  if (/^[\u3040-\u30ff]+$/.test(surf)) return surf;
+  if (v && v[1] && v[2] && surf.indexOf(v[1]) === 0 && /^[\u3040-\u30ff]*$/.test(surf.slice(v[1].length))) return v[2] + surf.slice(v[1].length);
+  return null;
+}
+function alignMap(surf, rs) {
+  var m = { 0: 0 }, ri = 0, i = 0, n = surf.length, j, end;
+  while (i < n) {
+    if (isKanaCh(surf.charAt(i))) {
+      if (toHira(rs.charAt(ri)) !== toHira(surf.charAt(i))) break;
+      ri++; i++; m[i] = ri;
+    } else {
+      j = i; while (j < n && !isKanaCh(surf.charAt(j))) j++;
+      end = (j === n) ? rs.length : rs.indexOf(toHira(surf.charAt(j)), ri + 1);
+      if (end < 0) break;
+      i = j; ri = end; m[i] = ri;
+    }
+  }
+  return m;
+}
+function lettersOf(k) { return toRomaji(k).toLowerCase().replace(/[^a-z]/g, ''); }
+function romajiCuts(surf, ro, v) {
+  var rs = surfRead(surf, v);
+  if (!rs || surf.length < 2) return [];
+  var r = lettersOf(rs), words = String(ro || '').toLowerCase().split(/\s+/), letters = '', bnd = [], i, k, p, best = null;
   if (!r) return [];
   for (i = 0; i < words.length; i++) { var w = words[i].replace(/[^a-z]/g, ''); if (!w) continue; letters += w; bnd.push(letters.length); }
   for (p = letters.indexOf(r); p >= 0; p = letters.indexOf(r, p + 1)) {
@@ -1010,10 +1035,12 @@ function romajiCuts(surf, ro) {
     if (inside.length) { best = { p: p, inside: inside }; break; }
   }
   if (!best) return [];
-  var cuts = [];
+  var map = alignMap(surf, rs), cuts = [];
   best.inside.forEach(function (x) {
-    var off = x - best.p;
-    for (k = 1; k < surf.length; k++) if (toRomaji(surf.slice(0, k)).toLowerCase().replace(/[^a-z]/g, '').length === off) { cuts.push(k); break; }
+    var off = x - best.p, kk = -1, ci;
+    for (k = 1; k < rs.length; k++) if (lettersOf(rs.slice(0, k)).length === off) { kk = k; break; }
+    if (kk < 0) return;
+    for (ci = 1; ci < surf.length; ci++) if (map[ci] === kk) { cuts.push(ci); break; }
   });
   return cuts;
 }
@@ -1047,7 +1074,7 @@ function openWord(info) {
     var tk = res ? jpToken(res, info.idx) : null;
     if (!tk || !tk.v) { viaJotoba(); return; }
     var a = tk.s, b = tk.e, ro = info.node.parentNode && info.node.parentNode.parentNode && info.node.parentNode.parentNode.querySelector('.ro');
-    var cuts = ro ? romajiCuts(info.text.slice(a, b), ro.textContent) : [], pts = [a], j;
+    var cuts = ro ? romajiCuts(info.text.slice(a, b), ro.textContent, tk.v) : [], pts = [a], j;
     cuts.forEach(function (c) { pts.push(a + c); }); pts.push(b);
     if (cuts.length) { for (j = 0; j < pts.length - 1; j++) if (info.idx >= pts[j] && info.idx < pts[j + 1]) { a = pts[j]; b = pts[j + 1]; break; } }
     var surf = info.text.slice(a, b);
