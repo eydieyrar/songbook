@@ -291,8 +291,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.11.1';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.0';
 var CHANGES = [
+  { v: '1.12.0', d: '22 Nov 2026', t: 'Romaji word splits', s: 'A space in the romaji line now splits a kana word in the lookup.', n: ['If the romaji line has a space inside a word written in kana (for example ita tte), tapping that word looks up each part on its own', 'The \u201cfrom\u201d line is gone from the word bubble'] },
   { v: '1.11.1', d: '22 Nov 2026', t: 'Bigger cover', s: 'On iPad the cover is as wide as the key table below it again.', n: ['The cover is no longer shrunk when the key table is shown; it matches the table width'] },
   { v: '1.11.0', d: '22 Nov 2026', t: 'Offline words, kanji, pitch', s: 'Load every word of a song for offline lookups, see what each kanji means, and optionally show the pitch accent.', n: ['Edit song, Word lookup, Load all words: reads every line of the song with jpdb and keeps the words and kanji on this device, so lookups work offline', 'Lines you tap are now kept between sessions too', 'The word bubble shows a short breakdown of each kanji (Settings, Dictionary can turn it off)', 'Tapping the same word again closes the bubble', 'Pitch accent is saved but hidden; Settings, Dictionary can show it drawn like jpdb, with a line over the high syllables'] },
   { v: '1.10.0', d: '22 Nov 2026', t: 'jpdb dictionary', s: 'Word lookup can use jpdb, which splits each line into words correctly and shows the pitch accent.', n: ['Settings, Dictionary: paste your jpdb API key (kept only on this device, never in backups or sync) to switch the lookup from Jotoba to jpdb', 'jpdb reads the whole line once, so the tapped word is cut at the right place and conjugations show their dictionary form', 'The bubble also shows the pitch accent number and a common tag; if jpdb is unreachable the lookup falls back to Jotoba'] },
@@ -916,7 +917,6 @@ function wordPopHTML(word, en) {
   var pit = (db.ui.wp && en.p && en.p.length) ? pitchHTML(en.r, en.p, tag) : '';
   var h = '<div class="wtop"><div><div class="wwd">' + esc(en.w) + '</div></div>' + (en.g ? '' : '<button class="wstar' + (saved ? ' on' : '') + '" data-act="wstar" data-w="' + esc(key) + '" aria-label="Save word">' + (saved ? '\u2605' : '\u2606') + '</button>') + '</div>';
   h += pit || (en.g ? '' : '<div class="wrow"><div class="wrd" style="margin:0">' + esc(en.r) + '</div>' + tag + '</div>');
-  if (en.f && en.f !== en.w && en.f !== en.r) h += '<div class="wfrom">from ' + esc(en.f) + '</div>';
   h += '<ol>' + en.m.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>';
   if (db.ui.wk && !en.g) {
     var wd = wordsLoad(), kj = kanjiOf(en.w).filter(function (c) { return wd.k[c]; });
@@ -938,6 +938,23 @@ function hlHTML(range) {
   for (i = 0; i < rects.length; i++) h += '<i class="whl" style="left:' + (rects[i].left - 1) + 'px;top:' + (rects[i].top + 2) + 'px;width:' + (rects[i].width + 2) + 'px;height:' + Math.max(8, rects[i].height - 4) + 'px"></i>';
   return h;
 }
+function romajiCuts(surf, ro) {
+  if (!/^[\u3040-\u30ff]+$/.test(surf) || surf.length < 2) return [];
+  var r = toRomaji(surf).toLowerCase().replace(/[^a-z]/g, ''), words = String(ro || '').toLowerCase().split(/\s+/), letters = '', bnd = [], i, k, p, best = null;
+  if (!r) return [];
+  for (i = 0; i < words.length; i++) { var w = words[i].replace(/[^a-z]/g, ''); if (!w) continue; letters += w; bnd.push(letters.length); }
+  for (p = letters.indexOf(r); p >= 0; p = letters.indexOf(r, p + 1)) {
+    var inside = bnd.filter(function (x) { return x > p && x < p + r.length; });
+    if (inside.length) { best = { p: p, inside: inside }; break; }
+  }
+  if (!best) return [];
+  var cuts = [];
+  best.inside.forEach(function (x) {
+    var off = x - best.p;
+    for (k = 1; k < surf.length; k++) if (toRomaji(surf.slice(0, k)).toLowerCase().replace(/[^a-z]/g, '').length === off) { cuts.push(k); break; }
+  });
+  return cuts;
+}
 function openWord(info) {
   closeWord();
   var rects = info.range.getClientRects();
@@ -951,21 +968,36 @@ function openWord(info) {
   function show(word, en) { if (wcur !== mine || !wpop) return; body.innerHTML = wordPopHTML(word, en); mine.en = en; placeWord(); if (en && !en.g && db.ui.wk) kanjiFill(en.w, function () { if (wcur === mine && wpop) { body.innerHTML = wordPopHTML(word, en); placeWord(); } }); }
   function viaJotoba() { lookupWord(info.word, function (en) { show(info.word, en); }); }
   if (!jpKey() || PARTICLES[info.word] || !info.node) { viaJotoba(); return; }
-  jpParse(info.text, function (res) {
-    if (wcur !== mine || !wpop) return;
-    var tk = res ? jpToken(res, info.idx) : null;
-    if (!tk || !tk.v) { viaJotoba(); return; }
-    var surf = info.text.slice(tk.s, tk.e), rg = document.createRange();
-    try { rg.setStart(info.node, tk.s); rg.setEnd(info.node, tk.e); } catch (x) { viaJotoba(); return; }
+  function setRange(a, b) {
+    var rg = document.createRange();
+    try { rg.setStart(info.node, a); rg.setEnd(info.node, b); } catch (x) { return false; }
     var rs = rg.getClientRects();
     if (rs.length) {
       var old = d.querySelectorAll('.whl'), k;
       for (k = 0; k < old.length; k++) old[k].parentNode.removeChild(old[k]);
       d.insertAdjacentHTML('afterbegin', hlHTML(rg));
-      mine.rect0 = rs[0]; mine.box = rg.getBoundingClientRect(); mine.word = surf; mine.s = tk.s; mine.e = tk.e;
+      mine.rect0 = rs[0]; mine.box = rg.getBoundingClientRect(); mine.word = info.text.slice(a, b); mine.s = a; mine.e = b;
     }
+    return true;
+  }
+  jpParse(info.text, function (res) {
+    if (wcur !== mine || !wpop) return;
+    var tk = res ? jpToken(res, info.idx) : null;
+    if (!tk || !tk.v) { viaJotoba(); return; }
+    var a = tk.s, b = tk.e, ro = info.node.parentNode && info.node.parentNode.parentNode && info.node.parentNode.parentNode.querySelector('.ro');
+    var cuts = ro ? romajiCuts(info.text.slice(a, b), ro.textContent) : [], pts = [a], j;
+    cuts.forEach(function (c) { pts.push(a + c); }); pts.push(b);
+    if (cuts.length) { for (j = 0; j < pts.length - 1; j++) if (info.idx >= pts[j] && info.idx < pts[j + 1]) { a = pts[j]; b = pts[j + 1]; break; } }
+    var surf = info.text.slice(a, b);
+    if (!setRange(a, b)) { viaJotoba(); return; }
     if (PARTICLES[surf]) { show(surf, { w: surf, r: surf, m: [PARTICLES[surf]], g: 1 }); return; }
-    show(surf, jpEntry(tk.v, surf));
+    if (!cuts.length) { show(surf, jpEntry(tk.v, surf)); return; }
+    jpParse(surf, function (r2) {
+      if (wcur !== mine || !wpop) return;
+      var t2 = r2 ? jpToken(r2, 0) : null;
+      if (t2 && t2.v) show(surf, jpEntry(t2.v, surf));
+      else lookupWord(surf, function (en) { show(surf, en); });
+    });
   });
 }
 function wordsP() {
