@@ -291,8 +291,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.1';
 var CHANGES = [
+  { v: '1.12.1', d: '22 Nov 2026', t: 'Offline covers fix', s: 'Covers now show offline, and Load all words also saves split words and says exactly what it did.', n: ['Album covers are saved on this device the first time they load, so they show offline', 'Load all words also reads the parts created by spaces in your romaji line', 'The Done message now tells you how many different lines were read, how many repeated lines were skipped, the split words, and the kanji in the song'] },
   { v: '1.12.0', d: '22 Nov 2026', t: 'Romaji word splits', s: 'A space in the romaji line now splits a kana word in the lookup.', n: ['If the romaji line has a space inside a word written in kana (for example ita tte), tapping that word looks up each part on its own', 'The \u201cfrom\u201d line is gone from the word bubble'] },
   { v: '1.11.1', d: '22 Nov 2026', t: 'Bigger cover', s: 'On iPad the cover is as wide as the key table below it again.', n: ['The cover is no longer shrunk when the key table is shown; it matches the table width'] },
   { v: '1.11.0', d: '22 Nov 2026', t: 'Offline words, kanji, pitch', s: 'Load every word of a song for offline lookups, see what each kanji means, and optionally show the pitch accent.', n: ['Edit song, Word lookup, Load all words: reads every line of the song with jpdb and keeps the words and kanji on this device, so lookups work offline', 'Lines you tap are now kept between sessions too', 'The word bubble shows a short breakdown of each kanji (Settings, Dictionary can turn it off)', 'Tapping the same word again closes the bubble', 'Pitch accent is saved but hidden; Settings, Dictionary can show it drawn like jpdb, with a line over the high syllables'] },
@@ -392,6 +393,45 @@ function idbPut(str) {
   } catch (e) { setStatus('IndexedDB save failed. Make a backup.'); }
 }
 function setStatus(m) { status = m; var el = document.getElementById('status'); if (el) { el.textContent = m; el.style.display = m ? 'block' : 'none'; } }
+/* ---------- covers kept on the device ---------- */
+var covData = {}, covBusy = {}, covFail = {};
+function covWarm(cb) {
+  if (!idb) { cb(); return; }
+  try {
+    var rq = idb.transaction('kv', 'readonly').objectStore('kv').openCursor();
+    rq.onsuccess = function () {
+      var c = rq.result;
+      if (!c) { cb(); return; }
+      if (typeof c.key === 'string' && c.key.indexOf('cover:') === 0 && typeof c.value === 'string') covData[c.key.slice(6)] = c.value;
+      c.continue();
+    };
+    rq.onerror = function () { cb(); };
+  } catch (e) { cb(); }
+}
+function covPut(url, data) {
+  if (!idb) return;
+  try { idb.transaction('kv', 'readwrite').objectStore('kv').put(data, 'cover:' + url); } catch (e) {}
+}
+function covEnsure(url) {
+  if (!url || covData[url] || covBusy[url] || covFail[url] || !/^https?:/.test(url)) return;
+  covBusy[url] = 1;
+  try {
+    fetch(url).then(function (r) { if (!r.ok) throw 0; return r.blob(); }).then(function (b) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        delete covBusy[url];
+        if (typeof fr.result !== 'string' || fr.result.indexOf('data:image') !== 0) { covFail[url] = 1; return; }
+        covData[url] = fr.result; covPut(url, fr.result);
+        var im = document.querySelectorAll('img[data-cu]'), i;
+        for (i = 0; i < im.length; i++) if (im[i].getAttribute('data-cu') === url) im[i].src = fr.result;
+      };
+      fr.onerror = function () { delete covBusy[url]; covFail[url] = 1; };
+      fr.readAsDataURL(b);
+    }).catch(function () { delete covBusy[url]; covFail[url] = 1; });
+  } catch (e) { delete covBusy[url]; covFail[url] = 1; }
+}
+function covSweep() { if (db) db.songs.forEach(function (sg) { if (sg.cover) covEnsure(sg.cover); }); }
+window.addEventListener('online', function () { covFail = {}; covSweep(); });
 var lsOk = true;
 function save() {
   db.savedAt = Date.now();
@@ -415,7 +455,7 @@ function boot() {
     db.songs = db.songs.filter(function (s) { return !(isBuiltInSample(s) && !s.sha && !s.dirty); });
     if (!pick || db.songs.length !== before) save();
     applyTheme();
-    render();
+    covWarm(function () { render(); covSweep(); });
     if (cfg) sync();
     try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist(); } catch (e) {}
   }
@@ -848,26 +888,48 @@ function setWall(m) { wallMsg = m; var el = document.getElementById('wallMsg'); 
 function loadAllWords(song) {
   if (wallBusy) return;
   if (!jpKey()) { setWall('Add your jpdb key first (Settings, Dictionary).'); return; }
-  var lines = [], seen = {}, kan = {}, i = 0, fails = 0, nl = 0;
-  song.lines.forEach(function (l) { var t = l.jp; if (t && String(t).replace(/\s/g, '') && !seen[t]) { seen[t] = 1; lines.push(t); } });
+  var lines = [], seen = {}, kan = {}, pieces = [], pseen = {}, i = 0, fails = 0, nl = 0, total = 0;
+  song.lines.forEach(function (l) { var t = l.jp; if (t && String(t).replace(/\s/g, '')) { total++; if (!seen[t]) { seen[t] = 1; lines.push({ jp: t, ro: l.ro || '' }); } } });
   if (!lines.length) { setWall('This song has no Japanese lines yet.'); return; }
   wallBusy = true;
   function finish(m) { wallBusy = false; setWall(m); }
+  function doneMsg(np) {
+    var all = Object.keys(kan), got = all.filter(function (c) { return wordsLoad().k[c]; }).length, miss = all.length - got;
+    return 'Done. ' + nl + ' different lines' + (total - nl > 0 ? ' (' + (total - nl) + ' repeated skipped)' : '') + (np ? ', ' + np + ' split words' : '') + ', ' + got + ' kanji in this song' + (miss ? ' (' + miss + ' could not be loaded, try again)' : '') + '.';
+  }
   function kanjiStep(list, j) {
-    if (j >= list.length) { finish('Done. ' + nl + ' lines and ' + list.length + ' kanji are saved on this device.'); return; }
+    if (j >= list.length) { finish(doneMsg(pieces.length)); return; }
     setWall('Kanji\u2026 ' + (j + 1) + ' / ' + list.length);
     kanjiGet(list[j], function () { setTimeout(function () { kanjiStep(list, j + 1); }, 120); });
   }
+  function pieceStep(j) {
+    if (j >= pieces.length) { kanjiStep(Object.keys(kan).filter(function (c) { return !wordsLoad().k[c]; }), 0); return; }
+    setWall('Split words\u2026 ' + (j + 1) + ' / ' + pieces.length);
+    var cached = !!(jpLines[pieces[j]] || wordsLoad().l[pieces[j]]);
+    jpParse(pieces[j], function (res, st) {
+      if (!res && (st === 401 || st === 403)) { finish('jpdb did not accept the key. Check Settings, Dictionary.'); return; }
+      setTimeout(function () { pieceStep(j + 1); }, cached ? 0 : 250);
+    });
+  }
   function step() {
-    if (i >= lines.length) { kanjiStep(Object.keys(kan).filter(function (c) { return !wordsLoad().k[c]; }), 0); return; }
+    if (i >= lines.length) { pieceStep(0); return; }
     setWall('Reading lines\u2026 ' + (i + 1) + ' / ' + lines.length);
-    var cached = !!(jpLines[lines[i]] || wordsLoad().l[lines[i]]);
-    jpParse(lines[i], function (res, st) {
+    var ln = lines[i], cached = !!(jpLines[ln.jp] || wordsLoad().l[ln.jp]);
+    jpParse(ln.jp, function (res, st) {
       if (!res) {
         fails++;
         if (st === 401 || st === 403) { finish('jpdb did not accept the key. Check Settings, Dictionary.'); return; }
         if (fails >= 3) { finish('Stopped: could not reach jpdb. ' + nl + ' lines were saved. Try again later.'); return; }
-      } else { nl++; res.vocab.forEach(function (v) { kanjiOf(v[1]).forEach(function (c) { kan[c] = 1; }); }); }
+      } else {
+        nl++;
+        res.vocab.forEach(function (v) { kanjiOf(v[1]).forEach(function (c) { kan[c] = 1; }); });
+        res.tokens.forEach(function (t) {
+          var sf = ln.jp.slice(t[1], t[1] + t[2]), cuts = romajiCuts(sf, ln.ro), pts, j, pc;
+          if (!cuts.length) return;
+          pts = [0].concat(cuts, [sf.length]);
+          for (j = 0; j < pts.length - 1; j++) { pc = sf.slice(pts[j], pts[j + 1]); if (pc && !pseen[pc] && !PARTICLES[pc]) { pseen[pc] = 1; pieces.push(pc); } }
+        });
+      }
       i++; setTimeout(step, cached ? 0 : 250);
     });
   }
@@ -1011,7 +1073,7 @@ function wordsP() {
   return h + '</div></div>';
 }
 function covH(s, big) {
-  return '<i class="cov' + (big ? ' art' : '') + '" style="background:' + grad(hue(s)) + '">' + (s.cover ? '<img src="' + esc(s.cover) + '" alt="" onerror="this.remove()">' : '') + '歌</i>';
+  return '<i class="cov' + (big ? ' art' : '') + '" style="background:' + grad(hue(s)) + '">' + (s.cover ? '<img src="' + esc(covData[s.cover] || s.cover) + '" data-cu="' + esc(s.cover) + '" alt="" onerror="this.remove()">' : '') + '歌</i>';
 }
 function nonBlank(s, k) { var n = 0; s.lines.forEach(function (l) { if (String(l[k]).replace(/\s/g, '')) n++; }); return n; }
 var CHEV = '<span class="chev"><svg width="8" height="14" viewBox="0 0 8 14"><path d="M1.5 1.5L6.5 7L1.5 12.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
@@ -1277,6 +1339,7 @@ function render(keep) {
   if (sc) { if (keep && !freshScroll) sc.scrollTop = top2; else centre(false); }
   freshScroll = false;
   syncBarColour();
+  covSweep();
   if (focus) { var f = document.querySelector(focus.sel); if (f) { try { f.focus(); } catch (e) {} } }
 }
 function openDetail(pg) {
