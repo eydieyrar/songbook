@@ -291,8 +291,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.2';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.3';
 var CHANGES = [
+  { v: '1.12.3', d: '22 Nov 2026', t: 'Updates reach the app', s: 'The Home Screen app now checks for new versions by itself and reloads when it is safe.', n: ['The app asks for the newest files every time instead of using a 10 minute old copy', 'It checks for an update when you come back to it, and reloads on its own unless you are editing a song or typing'] },
   { v: '1.12.2', d: '22 Nov 2026', t: 'Romaji splits for kanji words', s: 'A space in the romaji line now also splits words that contain kanji, like fushigi na and ano ko.', n: ['The romaji split works on words with kanji too, when the cut falls at a kanji or kana edge (for example 不思議 | な and あの | 子)', 'Load all words reads those split parts as well'] },
   { v: '1.12.1', d: '22 Nov 2026', t: 'Offline covers fix', s: 'Covers now show offline, and Load all words also saves split words and says exactly what it did.', n: ['Album covers are saved on this device the first time they load, so they show offline', 'Load all words also reads the parts created by spaces in your romaji line', 'The Done message now tells you how many different lines were read, how many repeated lines were skipped, the split words, and the kanji in the song'] },
   { v: '1.12.0', d: '22 Nov 2026', t: 'Romaji word splits', s: 'A space in the romaji line now splits a kana word in the lookup.', n: ['If the romaji line has a space inside a word written in kana (for example ita tte), tapping that word looks up each part on its own', 'The \u201cfrom\u201d line is gone from the word bubble'] },
@@ -1890,7 +1891,20 @@ document.addEventListener('pointercancel', unpeek);
 
 resetDraft();
 boot();
-try { if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js'); } catch (e) {}
+var swUpdated = false, swReg = null;
+function swSafe() { var a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return false; var c = db ? cp() : null; return !c || (c.p !== 'form' && c.p !== 'edit'); }
+function swTryReload() { if (swUpdated && swSafe()) { swUpdated = false; location.reload(); } }
+function swCheck() { if (swReg) { try { swReg.update().catch(function () {}); } catch (e) {} } }
+try {
+  if ('serviceWorker' in navigator) {
+    var hadCtl = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.register('sw.js').then(function (r) { swReg = r; });
+    navigator.serviceWorker.addEventListener('controllerchange', function () { if (!hadCtl) { hadCtl = true; return; } swUpdated = true; if (db && cp().p === 'list') swTryReload(); });
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') { swTryReload(); swCheck(); } });
+    window.addEventListener('online', swCheck);
+    setInterval(swCheck, 30 * 60 * 1000);
+  }
+} catch (e) {}
 })();
 </script>
 </body>
