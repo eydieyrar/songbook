@@ -278,6 +278,8 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 .wpop.below .warr{bottom:auto;top:-7px;transform:rotate(225deg)}
 .wtop{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.wwd{font-size:22px;font-weight:800;line-height:1.2}.wrd{font-size:13px;color:#cfcfd4;margin-top:1px}
 .wstar{width:32px;height:32px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:#fff;font-size:16px;padding:0;flex:none}.wstar.on{background:#f5c542;color:#1c1c1e}
+.wrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px;min-height:22px}.wrow .wtag{margin:0}.wpitw{font-size:16px;font-weight:700;letter-spacing:.3px}.wpitw small{font-size:11px;font-weight:500;color:#9a9aa0;margin-left:7px}.ps{display:inline-block;padding:1px 0;border-top:2px solid transparent;border-bottom:2px solid transparent}.ps.hi{border-top-color:#e8687b}.ps.lo{border-bottom-color:#4e86ca}.ps.pl{border-left:2px solid #e8687b;padding-left:1px}.ps.pr{border-right:2px solid #e8687b;padding-right:1px}
+.wkj{margin-top:9px;display:flex;flex-direction:column;gap:3px}.wkc{font-size:12px;color:#cfcfd4;line-height:1.35}.wkc b{font-size:15px;color:#fff;margin-right:6px}.wkc i{font-style:normal;color:#9a9aa0}
 .wfrom{font-size:11.5px;color:#9a9aa0;margin-top:6px}.wpop ol{margin:8px 0 0;padding-left:18px;line-height:1.4;color:#f2f2f7}
 .wtag{display:inline-block;margin-top:8px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.12);font-size:11px;color:#c9c9ce;margin-right:5px}
 .wnone{color:#c9c9ce;margin-top:4px;line-height:1.4}
@@ -289,8 +291,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.10.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.11.0';
 var CHANGES = [
+  { v: '1.11.0', d: '22 Nov 2026', t: 'Offline words, kanji, pitch', s: 'Load every word of a song for offline lookups, see what each kanji means, and optionally show the pitch accent.', n: ['Edit song, Word lookup, Load all words: reads every line of the song with jpdb and keeps the words and kanji on this device, so lookups work offline', 'Lines you tap are now kept between sessions too', 'The word bubble shows a short breakdown of each kanji (Settings, Dictionary can turn it off)', 'Tapping the same word again closes the bubble', 'Pitch accent is saved but hidden; Settings, Dictionary can show it drawn like jpdb, with a line over the high syllables'] },
   { v: '1.10.0', d: '22 Nov 2026', t: 'jpdb dictionary', s: 'Word lookup can use jpdb, which splits each line into words correctly and shows the pitch accent.', n: ['Settings, Dictionary: paste your jpdb API key (kept only on this device, never in backups or sync) to switch the lookup from Jotoba to jpdb', 'jpdb reads the whole line once, so the tapped word is cut at the right place and conjugations show their dictionary form', 'The bubble also shows the pitch accent number and a common tag; if jpdb is unreachable the lookup falls back to Jotoba'] },
   { v: '1.9.0', d: '22 Nov 2026', t: 'Word lookup', s: 'Tap a word in the current line to see its reading and meaning, and text can no longer be selected by touch.', n: ['Tap a word in the line that is already current to open a small bubble with the reading and meanings', 'Conjugated words are shown by their dictionary form; the star saves a word to Settings, Saved words', 'Looked-up words are kept on the device, so repeats work offline', 'Long-pressing text no longer selects it or opens Copy, Look Up and Translate; typing fields still work'] },
   { v: '1.8.1', d: '22 Nov 2026', t: 'Key button always there', s: 'The key, range and BPM button and the iPad table now show on every song, even before anything is filled in.', n: ['The ♪ button and the iPad table show on every song, with dashes until you fill them in'] },
@@ -333,7 +336,7 @@ function blankLine() { return { ro: '', jp: '', en: '', note: '' }; }
 function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', link: '', notes: '', lines: [] }); }
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
-  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.myLow = +d.ui.myLow || 0; d.ui.myHigh = +d.ui.myHigh || 0; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light';
+  d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.myLow = +d.ui.myLow || 0; d.ui.myHigh = +d.ui.myHigh || 0; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light'; d.ui.wp = d.ui.wp === true; d.ui.wk = d.ui.wk !== false;
   d.ui.sz = (d.ui.sz === 0 || d.ui.sz > 0) && d.ui.sz < 4 ? Math.floor(d.ui.sz) : 1;
   d.ui.theme = d.ui.theme === 'light' || d.ui.theme === 'dark' ? d.ui.theme : 'system';
   d.ui.strip = d.ui.strip || {}; if (d.ui.strip.sq == null) d.ui.strip.sq = 1; if (d.ui.strip.cjk == null) d.ui.strip.cjk = 1; if (d.ui.strip.rd == null) d.ui.strip.rd = 0;
@@ -684,7 +687,7 @@ function wordsLoad() {
   if (wordsDB) return wordsDB;
   try { wordsDB = JSON.parse(localStorage.getItem(WORDKEY) || 'null'); } catch (e) { wordsDB = null; }
   if (!wordsDB || typeof wordsDB !== 'object') wordsDB = {};
-  wordsDB.c = wordsDB.c || {}; wordsDB.s = wordsDB.s || {};
+  wordsDB.c = wordsDB.c || {}; wordsDB.s = wordsDB.s || {}; wordsDB.l = wordsDB.l || {}; wordsDB.k = wordsDB.k || {};
   return wordsDB;
 }
 function wordsSave() { try { localStorage.setItem(WORDKEY, JSON.stringify(wordsDB)); } catch (e) {} }
@@ -775,9 +778,12 @@ function wordRange(e, lineEl) {
 var JPKEY = 'songbook.jpdb', jpLines = {};
 function jpKey() { try { return localStorage.getItem(JPKEY) || ''; } catch (e) { return ''; } }
 function jpParse(text, cb, keyOv) {
-  var key = keyOv || jpKey();
+  var wd = wordsLoad(), key = keyOv || jpKey();
+  if (!keyOv) {
+    if (jpLines[text]) { cb(jpLines[text], 200); return; }
+    if (wd.l[text]) { jpLines[text] = wd.l[text]; cb(wd.l[text], 200); return; }
+  }
   if (!key) { cb(null, 0); return; }
-  if (!keyOv && jpLines[text]) { cb(jpLines[text], 200); return; }
   var done = false, tm = setTimeout(function () { if (!done) { done = true; cb(null, -1); } }, 9000);
   try {
     fetch('https://jpdb.io/api/v1/parse', { method: 'POST', headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text, token_fields: ['vocabulary_index', 'position', 'length'], position_length_encoding: 'utf16', vocabulary_fields: ['vid', 'spelling', 'reading', 'frequency_rank', 'part_of_speech', 'meanings', 'card_state', 'pitch_accent'] }) })
@@ -785,25 +791,85 @@ function jpParse(text, cb, keyOv) {
       .then(function (o) {
         if (done) return; done = true; clearTimeout(tm);
         if (o.st !== 200 || !o.d || !o.d.tokens) { cb(null, o.st); return; }
-        var res = { tokens: o.d.tokens, vocab: o.d.vocabulary || [] };
-        if (!keyOv) jpLines[text] = res;
+        var res = { tokens: o.d.tokens.map(function (t) { return [t[0], t[1], t[2]]; }), vocab: (o.d.vocabulary || []).map(function (v) { return [v[0], v[1], v[2], v[3], (v[5] || []).slice(0, 3), v[7] || []]; }) };
+        if (!keyOv) { jpLines[text] = res; wd.l[text] = res; wordsSave(); }
         cb(res, 200);
       })
       .catch(function () { if (!done) { done = true; clearTimeout(tm); cb(null, -1); } });
   } catch (e) { if (!done) { done = true; clearTimeout(tm); cb(null, -1); } }
 }
 function accentNum(pat) {
-  if (!pat) return '';
   if (pat.charAt(0) === 'H') return '1';
   var i = pat.lastIndexOf('H');
   if (i < 0) return '0';
   return i === pat.length - 1 ? '0' : String(i + 1);
 }
+function pitchHTML(rd, pats, tag) {
+  var ch = (rd || '').split(''), out = '', n = 0;
+  (pats || []).slice(0, 2).forEach(function (p) {
+    if (p.length !== ch.length + 1) return;
+    var segs = [], cur = null, i, html = '', particleHigh = p.charAt(ch.length) === 'H';
+    for (i = 0; i < ch.length; i++) { var hi = p.charAt(i) === 'H'; if (!cur || cur.h !== hi) { cur = { h: hi, t: '' }; segs.push(cur); } cur.t += ch[i]; }
+    segs.forEach(function (sg, j) {
+      var cls = 'ps ' + (sg.h ? 'hi' : 'lo');
+      if (sg.h && j > 0) cls += ' pl';
+      if (sg.h && (j < segs.length - 1 || !particleHigh)) cls += ' pr';
+      html += '<span class="' + cls + '">' + esc(sg.t) + '</span>';
+    });
+    out += '<div class="wrow"><div class="wpitw">' + html + '<small>[' + accentNum(p) + ']</small></div>' + (n === 0 ? (tag || '') : '') + '</div>';
+    n++;
+  });
+  return out;
+}
 function jpEntry(v, surface) {
-  var acc = [], i, a;
-  (v[7] || []).forEach(function (pt) { a = accentNum(pt); if (a !== '' && acc.indexOf(a) < 0) acc.push(a); });
-  var rank = v[3];
-  return { w: v[1], r: v[2], m: (v[5] || []).slice(0, 3), c: !!(rank && rank <= 5000), f: surface, a: acc.join(' or ') };
+  return { w: v[1], r: v[2], m: v[4].slice(0, 3), c: !!(v[3] && v[3] <= 5000), f: surface, p: v[5] || [] };
+}
+function kanjiGet(ch, cb) {
+  var wd = wordsLoad();
+  if (wd.k[ch]) { cb(wd.k[ch]); return; }
+  try {
+    fetch('https://kanjiapi.dev/v1/kanji/' + encodeURIComponent(ch)).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.meanings) { cb(null); return; }
+      wd.k[ch] = { m: d.meanings.slice(0, 3), on: (d.on_readings || []).slice(0, 2), kun: (d.kun_readings || []).slice(0, 2) };
+      wordsSave(); cb(wd.k[ch]);
+    }).catch(function () { cb(null); });
+  } catch (e) { cb(null); }
+}
+function kanjiOf(w) { var out = [], i, c; for (i = 0; i < w.length; i++) { c = w.charAt(i); if (/[\u4e00-\u9fff]/.test(c) && out.indexOf(c) < 0) out.push(c); } return out; }
+function kanjiFill(word, cb) {
+  var wd = wordsLoad(), need = kanjiOf(word).filter(function (c) { return !wd.k[c]; }), n = need.length;
+  if (!n) return;
+  need.forEach(function (c) { kanjiGet(c, function () { n--; if (!n) cb(); }); });
+}
+var wallBusy = false, wallMsg = '';
+function setWall(m) { wallMsg = m; var el = document.getElementById('wallMsg'); if (el) el.textContent = m; }
+function loadAllWords(song) {
+  if (wallBusy) return;
+  if (!jpKey()) { setWall('Add your jpdb key first (Settings, Dictionary).'); return; }
+  var lines = [], seen = {}, kan = {}, i = 0, fails = 0, nl = 0;
+  song.lines.forEach(function (l) { var t = l.jp; if (t && String(t).replace(/\s/g, '') && !seen[t]) { seen[t] = 1; lines.push(t); } });
+  if (!lines.length) { setWall('This song has no Japanese lines yet.'); return; }
+  wallBusy = true;
+  function finish(m) { wallBusy = false; setWall(m); }
+  function kanjiStep(list, j) {
+    if (j >= list.length) { finish('Done. ' + nl + ' lines and ' + list.length + ' kanji are saved on this device.'); return; }
+    setWall('Kanji\u2026 ' + (j + 1) + ' / ' + list.length);
+    kanjiGet(list[j], function () { setTimeout(function () { kanjiStep(list, j + 1); }, 120); });
+  }
+  function step() {
+    if (i >= lines.length) { kanjiStep(Object.keys(kan).filter(function (c) { return !wordsLoad().k[c]; }), 0); return; }
+    setWall('Reading lines\u2026 ' + (i + 1) + ' / ' + lines.length);
+    var cached = !!(jpLines[lines[i]] || wordsLoad().l[lines[i]]);
+    jpParse(lines[i], function (res, st) {
+      if (!res) {
+        fails++;
+        if (st === 401 || st === 403) { finish('jpdb did not accept the key. Check Settings, Dictionary.'); return; }
+        if (fails >= 3) { finish('Stopped: could not reach jpdb. ' + nl + ' lines were saved. Try again later.'); return; }
+      } else { nl++; res.vocab.forEach(function (v) { kanjiOf(v[1]).forEach(function (c) { kan[c] = 1; }); }); }
+      i++; setTimeout(step, cached ? 0 : 250);
+    });
+  }
+  step();
 }
 function jpToken(res, idx) {
   var i, t;
@@ -815,6 +881,7 @@ function jpdbP() {
   return navBar(backBtn(), 'Dictionary', '<span></span>') + '<div class="body"><div class="sec">jpdb</div><div class="grp">' +
     '<div class="fld"><label>jpdb API key' + (has ? ' \u00b7 leave empty to keep the saved one' : '') + '</label><input id="jpKeyIn" type="password" autocapitalize="none" autocorrect="off" placeholder="' + (has ? '(saved)' : 'API key from your jpdb.io settings') + '"></div>' +
     '<div class="btnrow"><button class="sbtn pri" data-act="jpdbsave">Save and test</button>' + (has ? '<button class="sbtn red" data-act="jpdbclear">Turn off</button>' : '') + '</div></div>' +
+    '<div class="sec">In the word bubble</div><div class="grp">' + [['wp', 'Pitch accent (needs jpdb)'], ['wk', 'Kanji breakdown']].map(function (o) { return '<div class="fld"><label>' + o[1] + '</label><div class="seg solo"><button data-act="wopt" data-o="' + o[0] + '" data-k="1" class="' + (db.ui[o[0]] ? 'on' : '') + '">Show</button><button data-act="wopt" data-o="' + o[0] + '" data-k="0" class="' + (!db.ui[o[0]] ? 'on' : '') + '">Hide</button></div></div>'; }).join('') + '</div>' +
     '<div class="sync syncmsg" id="jpMsg">' + (has ? 'jpdb is on.' : 'Jotoba is used.') + '</div><div class="note">With a key, tapping a word asks jpdb to read the whole line, so words are cut in the right place and the pitch accent is shown. The key stays on this device and is never part of a backup or sync. If jpdb cannot be reached, Jotoba is used instead.</div></div>';
 }
 function closeWord() { if (wpop && wpop.parentNode) wpop.parentNode.removeChild(wpop); wpop = null; wcur = null; }
@@ -844,11 +911,16 @@ function lookupWord(word, cb) {
 function wordPopHTML(word, en) {
   if (en === 'wait') return '<div class="wwd">' + esc(word) + '</div><div class="wnone">Looking up\u2026</div>';
   if (!en) return '<div class="wwd">' + esc(word) + '</div><div class="wnone">No result. Check your connection and tap the word again.</div>';
-  var key = en.w, saved = !!wordsLoad().s[key], h = '<div class="wtop"><div><div class="wwd">' + esc(en.w) + '</div><div class="wrd">' + esc(toRomaji(en.r)) + (en.g ? '' : ' \u00b7 ' + esc(en.r)) + '</div></div>' + (en.g ? '' : '<button class="wstar' + (saved ? ' on' : '') + '" data-act="wstar" data-w="' + esc(key) + '" aria-label="Save word">' + (saved ? '\u2605' : '\u2606') + '</button>') + '</div>';
+  var key = en.w, saved = !!wordsLoad().s[key], tag = en.c ? '<span class="wtag">common</span>' : '';
+  var pit = (db.ui.wp && en.p && en.p.length) ? pitchHTML(en.r, en.p, tag) : '';
+  var h = '<div class="wtop"><div><div class="wwd">' + esc(en.w) + '</div></div>' + (en.g ? '' : '<button class="wstar' + (saved ? ' on' : '') + '" data-act="wstar" data-w="' + esc(key) + '" aria-label="Save word">' + (saved ? '\u2605' : '\u2606') + '</button>') + '</div>';
+  h += pit || (en.g ? '' : '<div class="wrow"><div class="wrd" style="margin:0">' + esc(en.r) + '</div>' + tag + '</div>');
   if (en.f && en.f !== en.w && en.f !== en.r) h += '<div class="wfrom">from ' + esc(en.f) + '</div>';
   h += '<ol>' + en.m.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ol>';
-  if (en.c) h += '<span class="wtag">common</span>';
-  if (en.a) h += '<span class="wtag">pitch ' + esc(en.a) + '</span>';
+  if (db.ui.wk && !en.g) {
+    var wd = wordsLoad(), kj = kanjiOf(en.w).filter(function (c) { return wd.k[c]; });
+    if (kj.length) h += '<div class="wkj">' + kj.map(function (c) { var k = wd.k[c]; return '<div class="wkc"><b>' + esc(c) + '</b>' + esc(k.m.slice(0, 2).join(', ')) + '</div>'; }).join('') + '</div>';
+  }
   return h;
 }
 function placeWord() {
@@ -872,10 +944,10 @@ function openWord(info) {
   var d = document.createElement('div'); d.className = 'wlayer';
   d.innerHTML = hlHTML(info.range) + '<div class="wpop"><div class="wbody"></div><span class="warr"></span></div>';
   document.getElementById('app').appendChild(d);
-  wpop = d; wcur = { rect0: rects[0], box: info.range.getBoundingClientRect(), word: info.word };
+  wpop = d; wcur = { rect0: rects[0], box: info.range.getBoundingClientRect(), word: info.word, node: info.node, s: info.range.startOffset, e: info.range.endOffset };
   var body = d.querySelector('.wbody'), mine = wcur;
   body.innerHTML = wordPopHTML(info.word, 'wait'); placeWord();
-  function show(word, en) { if (wcur !== mine || !wpop) return; body.innerHTML = wordPopHTML(word, en); mine.en = en; placeWord(); }
+  function show(word, en) { if (wcur !== mine || !wpop) return; body.innerHTML = wordPopHTML(word, en); mine.en = en; placeWord(); if (en && !en.g && db.ui.wk) kanjiFill(en.w, function () { if (wcur === mine && wpop) { body.innerHTML = wordPopHTML(word, en); placeWord(); } }); }
   function viaJotoba() { lookupWord(info.word, function (en) { show(info.word, en); }); }
   if (!jpKey() || PARTICLES[info.word] || !info.node) { viaJotoba(); return; }
   jpParse(info.text, function (res) {
@@ -889,7 +961,7 @@ function openWord(info) {
       var old = d.querySelectorAll('.whl'), k;
       for (k = 0; k < old.length; k++) old[k].parentNode.removeChild(old[k]);
       d.insertAdjacentHTML('afterbegin', hlHTML(rg));
-      mine.rect0 = rs[0]; mine.box = rg.getBoundingClientRect(); mine.word = surf;
+      mine.rect0 = rs[0]; mine.box = rg.getBoundingClientRect(); mine.word = surf; mine.s = tk.s; mine.e = tk.e;
     }
     if (PARTICLES[surf]) { show(surf, { w: surf, r: surf, m: [PARTICLES[surf]], g: 1 }); return; }
     show(surf, jpEntry(tk.v, surf));
@@ -1045,6 +1117,7 @@ function formP() {
   h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the song link, title and artist') + '</small></div></div>' +
     '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="xround" data-act="nocover" aria-label="Remove cover"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
     (covers.length ? '<div class="covers">' + covers.map(function (c, i) { return '<div class="cv' + (s.cover === c.u ? ' sel' : '') + '" data-act="cover" data-i="' + i + '"><i><img src="' + esc(c.u) + '" alt=""></i>' + esc(c.l) + '</div>'; }).join('') + '</div>' : '') + '</div>';
+  h += '<div class="sec">Word lookup</div><div class="grp"><div class="row" style="cursor:default"><div class="sp"><b>Load all words</b><small id="wallMsg">' + esc(wallMsg || 'Reads every line with jpdb and saves the words and kanji on this device, so lookups work offline.') + '</small></div></div><div class="btnrow"><button class="sbtn pri" data-act="wall">Load all words</button></div></div>';
   h += '<div class="sec">Lyric sources</div>';
   [['jp', 'Japanese'], ['ro', 'Romaji'], ['en', 'English']].forEach(function (r) {
     var k = r[0];
@@ -1363,6 +1436,7 @@ document.addEventListener('click', function (e) {
   document.addEventListener('touchend', function (e) { if (x0 !== null && e.changedTouches[0].clientX - x0 < -60) setPanel(false); x0 = null; }, { passive: true });
 })();
 document.addEventListener('click', function (e) {
+  var prevWord = wpop ? wcur : null;
   if (wpop && !(e.target.closest && e.target.closest('.wpop'))) closeWord();
   var t = e.target.closest ? e.target.closest('[data-act]') : null;
   if (!t || !db) return;
@@ -1383,7 +1457,7 @@ document.addEventListener('click', function (e) {
   if (act === 'conflict') { push({ p: 'conflict', id: id }); return; }
   if (act === 'line') {
     if (t.parentNode && t.parentNode.id === 'sc') {
-      if (i === curLine) { var wi = wordRange(e, t); if (wi) { openWord(wi); return; } }
+      if (i === curLine) { var wi = wordRange(e, t); if (wi) { if (prevWord && prevWord.node === wi.node && wi.idx >= prevWord.s && wi.idx < prevWord.e) return; openWord(wi); return; } }
       curLine = i;
       var ls = document.querySelectorAll('.al'), j;
       for (j = 0; j < ls.length; j++) { if (j === i) ls[j].classList.add('act'); else ls[j].classList.remove('act'); }
@@ -1422,6 +1496,8 @@ document.addEventListener('click', function (e) {
     touch(ks); if (ks !== draft) save(); render(true); return;
   }
   if (act === 'vclose') { setVMenu(false); return; }
+  if (act === 'wopt') { db.ui[t.getAttribute('data-o')] = k === '1'; save(); render(true); return; }
+  if (act === 'wall') { var wsg = fs(); if (wsg) loadAllWords(wsg); return; }
   if (act === 'rs' || act === 'rl') { db.ui[act] = k; save(); applyRH(); render(true); return; }
   if (act === 'theme') { db.ui.theme = k; save(); applyTheme(); render(true); return; }
   if (act === 'size') { db.ui.sz = +k; save(); render(true); return; }
