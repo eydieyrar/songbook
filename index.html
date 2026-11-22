@@ -275,8 +275,9 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.8.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.8.1';
 var CHANGES = [
+  { v: '1.8.1', d: '22 Nov 2026', t: 'Key button always there', s: 'The key, range and BPM button and the iPad table now show on every song, even before anything is filled in.', n: ['The ♪ button and the iPad table show on every song, with dashes until you fill them in'] },
   { v: '1.8.0', d: '22 Nov 2026', t: 'Key, range and BPM', s: 'Each song can hold its key, the singer\'s lowest and highest note and the BPM, with a key changer that checks your own range.', n: ['New Key & range group in the song details: original key, lowest and highest note, BPM with Tap, and your key shift', 'Your range is set once in Settings; notes outside it show in red', 'iPad: the table sits under the album cover. iPhone and portrait: the ♪ button opens it as a sheet', 'A pitch graph appears when a song has pitch data'] },
   { v: '1.7.1', d: '22 Nov 2026', t: 'Tidier settings', s: 'One preview in Settings shows both the text size and the hidden romaji style.', n: ['Settings: the two samples are now one preview with three lines, so text size and hidden romaji can be tuned together'] },
   { v: '1.7.0', d: '22 Nov 2026', t: 'One link per song', s: 'A song now has one link, Spotify or UtaTime, shared by the cover finder and saved with the song.', n: ['New Song link field at the top of the details, saved and synced with the song', 'Find covers uses that link, along with the title and artist'] },
@@ -589,7 +590,7 @@ function parseNote(str) {
 }
 function keyHTML(pc, minor) { return esc(minor ? KEYMIN[pc] : KEYMAJ[pc]) + (minor ? '<span class="km">m</span>' : ''); }
 function shiftText(n) { return n > 0 ? '+' + n : n < 0 ? '\u2212' + (-n) : '0'; }
-function hasKey(s) { return !!(s && (s.kpc >= 0 || s.lo || s.hi || s.bpm || (s.pitch && s.pitch.length > 1))); }
+function hasKey(s) { return !!s; }
 function pitchSegs(P, sh) {
   var out = [], cur = [], i;
   for (i = 0; i < P.length; i++) { if (!P[i][1]) { if (cur.length === 1) cur.push([cur[0][0] + 0.8, cur[0][1]]); if (cur.length > 1) out.push(cur); cur = []; } else cur.push([P[i][0], P[i][1] + sh]); }
