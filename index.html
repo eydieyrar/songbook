@@ -292,8 +292,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.13.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.14.0';
 var CHANGES = [
+  { v: '1.14.0', d: '26 Nov 2026', t: 'Paste a UtaTime block', s: 'One paste fills the Japanese, romaji and English boxes.', n: ['New card above the lyric boxes: paste the three-language block from the UtaTime page (the global one) and the three boxes fill in at once', 'UtaTime source links are changed to the global page automatically', 'Then press Apply pasted lyrics to lines as before'] },
   { v: '1.13.0', d: '25 Nov 2026', t: 'Albums, dates, link page', s: 'Songs now keep an album and a release date, and a new song starts with a page for its links.', n: ['New fields on the song form: single link, album and release date (written like 2024 Apr 17; a date that is not real is not accepted)', 'The reader cover shows the album and release date under the artist', 'Adding a song now opens a links page first: the album-version Spotify link, an optional single link and an optional UtaTime link. The title and cover are read from Spotify, and the artist, album and date are matched in Apple Music', 'The album, release date and single link now stay on the song when it syncs'] },
   { v: '1.12.3', d: '22 Nov 2026', t: 'Updates reach the app', s: 'The Home Screen app now checks for new versions by itself and reloads when it is safe.', n: ['The app asks for the newest files every time instead of using a 10 minute old copy', 'It checks for an update when you come back to it, and reloads on its own unless you are editing a song or typing'] },
   { v: '1.12.2', d: '22 Nov 2026', t: 'Romaji splits for kanji words', s: 'A space in the romaji line now also splits words that contain kanji, like fushigi na and ano ko.', n: ['The romaji split works on words with kanji too, when the cut falls at a kanji or kana edge (for example 不思議 | な and あの | 子)', 'Load all words reads those split parts as well'] },
@@ -332,6 +333,7 @@ var CHANGES = [
 ];
 var db = null, status = '';
 var tab = 'songs', stacks = { songs: [{ p: 'list' }], add: [{ p: 'form' }] };
+var sbText = '', sbMsg = '';
 var linkStage = true, lk = { album: '', single: '', uta: '' }, lkMsg = '', lkBusy = false, lkData = null, lkTok = 0;
 var draft = null, sheetKind = 'discard', sheetArg = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
 var pushing = false, freshScroll = true, an = { v: 0, m: 0, s: 0 };
@@ -1261,6 +1263,7 @@ function formP() {
     '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="xround" data-act="nocover" aria-label="Remove cover"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
     (covers.length ? '<div class="covers">' + covers.map(function (c, i) { return '<div class="cv' + (s.cover === c.u ? ' sel' : '') + '" data-act="cover" data-i="' + i + '"><i><img src="' + esc(c.u) + '" alt=""></i>' + esc(c.l) + '</div>'; }).join('') + '</div>' : '') + '</div>';
   h += '<div class="sec">Word lookup</div><div class="grp"><div class="row" style="cursor:default"><div class="sp"><b>Load all words</b><small id="wallMsg">' + esc(wallMsg || 'Reads every line with jpdb and saves the words and kanji on this device, so lookups work offline.') + '</small></div></div><div class="btnrow"><button class="sbtn pri" data-act="wall">Load all words</button></div></div>';
+  h += '<div class="sec">Paste a UtaTime block</div><div class="grp"><div class="fld"><label>The three-language block (HTML from the global UtaTime page)</label><span class="fw ta"><textarea data-sb="1" placeholder="Paste the sbs-translation block here">' + esc(sbText) + '</textarea></span></div>' + (sbMsg ? '<div class="sheetnote">' + esc(sbMsg) + '</div>' : '') + '<div class="btnrow"><button class="sbtn pri" data-act="sbfill">Fill the three boxes</button></div></div>';
   h += '<div class="sec">Lyric sources</div>';
   [['jp', 'Japanese'], ['ro', 'Romaji'], ['en', 'English']].forEach(function (r) {
     var k = r[0];
@@ -1360,8 +1363,8 @@ function render(keep) {
   var oldsc = document.getElementById('sc'), top2 = oldsc ? oldsc.scrollTop : 0;
   var oldcols = [].map.call(document.querySelectorAll('.layer.topl .fcol'), function (c) { return c.scrollTop; });
   var ae = document.activeElement, focus = null;
-  if (ae && ae.getAttribute && (ae.hasAttribute('data-c') || ae.hasAttribute('data-f') || ae.hasAttribute('data-p') || ae.hasAttribute('data-s'))) {
-    focus = { sel: ae.hasAttribute('data-c') ? '[data-c="' + ae.getAttribute('data-c') + '"][data-i="' + ae.getAttribute('data-i') + '"]' : ae.hasAttribute('data-f') ? '[data-f="' + ae.getAttribute('data-f') + '"]' : ae.hasAttribute('data-p') ? '[data-p="' + ae.getAttribute('data-p') + '"]' : '[data-s="' + ae.getAttribute('data-s') + '"]' };
+  if (ae && ae.getAttribute && (ae.hasAttribute('data-c') || ae.hasAttribute('data-f') || ae.hasAttribute('data-p') || ae.hasAttribute('data-s') || ae.hasAttribute('data-sb'))) {
+    focus = { sel: ae.hasAttribute('data-c') ? '[data-c="' + ae.getAttribute('data-c') + '"][data-i="' + ae.getAttribute('data-i') + '"]' : ae.hasAttribute('data-f') ? '[data-f="' + ae.getAttribute('data-f') + '"]' : ae.hasAttribute('data-p') ? '[data-p="' + ae.getAttribute('data-p') + '"]' : ae.hasAttribute('data-sb') ? '[data-sb]' : '[data-s="' + ae.getAttribute('data-s') + '"]' };
   }
   var st = stk(), h = '';
   if (ip) { var sg = song(), hh = sg ? hue(sg) : 200; h += '<div class="rdbg" style="--rb:hsl(' + hh + ',45%,9%)"><i class="blob" style="width:520px;height:520px;color:hsl(' + hh + ',85%,58%);left:-160px;top:-120px"></i><i class="blob" style="width:600px;height:600px;color:hsl(' + ((hh + 140) % 360) + ',75%,55%);right:-200px;bottom:-160px"></i></div>'; }
@@ -1466,6 +1469,16 @@ function bracketOf(s) {
 /* A line that is only a bracketed phrase is a section marker when it names a section (Verse, Chorus, サビ ...),
    or when it opens a stanza and its bracket type is the one this source uses for section names.
    Brackets in the middle of a stanza or at its end ((ooh), (x2) ...) are always kept. */
+function utaGlobal(u) { return String(u || '').replace(/(utatime\.com)\/(?!global\/)lyrics\//, '$1/global/lyrics/'); }
+function parseSbs(html) {
+  var doc = new DOMParser().parseFromString(html, 'text/html'), out = { jp: [], ro: [], en: [] };
+  [].forEach.call(doc.querySelectorAll('.sbs-row'), function (r) {
+    function g(c) { var e = r.querySelector('.' + c); return e ? e.textContent.replace(/\s+/g, ' ').trim() : ''; }
+    var j = g('sbs-lyric'), o = g('sbs-romaji'), e = g('sbs-tl');
+    if (j || o || e) { out.jp.push(j); out.ro.push(o); out.en.push(e); }
+  });
+  return out;
+}
 function splitLines(text) {
   var raw = text.split(/\r?\n/).map(function (l) { return l.replace(/^[\s\u3000]+|[\s\u3000]+$/g, ''); });
   var types = {}, i, b;
@@ -1721,6 +1734,14 @@ document.addEventListener('click', function (e) {
   if (act === 'covers') { if (s) findCovers(s); return; }
   if (act === 'cover') { if (s && covers[i]) { s.cover = covers[i].u; touch(s); if (s !== draft) save(); render(true); } return; }
   if (act === 'nocover') { if (s) { s.cover = ''; touch(s); if (s !== draft) save(); render(true); } return; }
+  if (act === 'sbfill') {
+    if (!s) return;
+    var r = parseSbs(sbText);
+    if (!r.jp.length) { sbMsg = 'No lyric rows found. Paste the whole sbs-translation block from the global page (/global/lyrics/…).'; render(true); return; }
+    ['jp', 'ro', 'en'].forEach(function (c) { s.paste[c] = r[c].join('\n'); if (s.src[c]) s.src[c] = utaGlobal(s.src[c]); });
+    sbText = ''; sbMsg = 'Filled ' + r.jp.length + ' lines in the three boxes. Press Apply pasted lyrics to lines.';
+    touch(s); if (s !== draft) save(); render(true); return;
+  }
   if (act === 'apply') {
     if (!s) return;
     var any = false;
@@ -1812,6 +1833,7 @@ document.addEventListener('input', function (e) {
   if (t.id === 'q') { query = t.value; var pos = t.selectionStart; render(true); var q2 = document.getElementById('q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (x) {} } return; }
   if (t.hasAttribute('data-u')) { db.ui[t.getAttribute('data-u')] = parseNote(t.value); save(); return; }
   var s = fs();
+  if (t.hasAttribute('data-sb')) { sbText = t.value; return; }
   if (t.hasAttribute('data-lk')) { lk[t.getAttribute('data-lk')] = t.value; return; }
   if (t.hasAttribute('data-n')) {
     var ns = fs(), nk = t.getAttribute('data-n');
@@ -1828,7 +1850,7 @@ document.addEventListener('input', function (e) {
   if (t.hasAttribute('data-f')) {
     setPath(s, t.getAttribute('data-f'), t.value); touch(s); if (s !== draft) save();
     var b = document.getElementById('savebtn'); if (b && cp().p === 'form') b.classList.toggle('dis', !s.title.jp.trim() && !s.title.en.trim());
-  } else if (t.hasAttribute('data-s')) { s.src[t.getAttribute('data-s')] = t.value; touch(s); if (s !== draft) save(); }
+  } else if (t.hasAttribute('data-s')) { var gv = utaGlobal(t.value); if (gv !== t.value) t.value = gv; s.src[t.getAttribute('data-s')] = gv; touch(s); if (s !== draft) save(); }
   else if (t.hasAttribute('data-c')) {
     s.lines[+t.getAttribute('data-i')][t.getAttribute('data-c')] = t.value; touch(s); if (s !== draft) save(); updateAlign();
     if (t.getAttribute('data-c') === 'note') { var nc = t.closest('.cell'); if (nc) nc.classList.toggle('empty', !t.value.trim()); }
