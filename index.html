@@ -271,7 +271,7 @@ input.bad{color:#ff3b30}
 *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,select{-webkit-user-select:text!important;user-select:text!important}
 
-.wlayer{position:fixed;left:0;top:0;right:0;bottom:0;z-index:70;pointer-events:none}
+.wlayer{position:fixed;left:0;top:0;right:0;bottom:0;z-index:35;pointer-events:none}
 .whl{position:fixed;border-radius:7px;background:rgba(255,255,255,.24);pointer-events:none}
 .wpop{position:fixed;pointer-events:auto;width:290px;max-width:calc(100vw - 20px);border-radius:20px;background:rgba(58,58,62,.94);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%);border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 34px rgba(0,0,0,.5);padding:12px 14px;color:#fff;font-size:14px;animation:wpin .18s ease-out}
 @keyframes wpin{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
@@ -292,8 +292,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.14.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.14.1';
 var CHANGES = [
+  { v: '1.14.1', d: '26 Nov 2026', t: 'Panel over the word bubble', s: 'The song panel now slides over an open word bubble instead of the bubble floating on top of it.', n: ['The word bubble sits under the song panel'] },
   { v: '1.14.0', d: '26 Nov 2026', t: 'Paste a UtaTime block', s: 'One paste fills the Japanese, romaji and English boxes.', n: ['New card above the lyric boxes: paste the three-language block from the UtaTime page (the global one) and the three boxes fill in at once', 'UtaTime source links are changed to the global page automatically', 'Then press Apply pasted lyrics to lines as before'] },
   { v: '1.13.0', d: '25 Nov 2026', t: 'Albums, dates, link page', s: 'Songs now keep an album and a release date, and a new song starts with a page for its links.', n: ['New fields on the song form: single link, album and release date (written like 2024 Apr 17; a date that is not real is not accepted)', 'The reader cover shows the album and release date under the artist', 'Adding a song now opens a links page first: the album-version Spotify link, an optional single link and an optional UtaTime link. The title and cover are read from Spotify, and the artist, album and date are matched in Apple Music', 'The album, release date and single link now stay on the song when it syncs'] },
   { v: '1.12.3', d: '22 Nov 2026', t: 'Updates reach the app', s: 'The Home Screen app now checks for new versions by itself and reloads when it is safe.', n: ['The app asks for the newest files every time instead of using a 10 minute old copy', 'It checks for an update when you come back to it, and reloads on its own unless you are editing a song or typing'] },
