@@ -152,6 +152,7 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .al .enw.anim{-webkit-mask-image:linear-gradient(transparent,#000 16px);mask-image:linear-gradient(transparent,#000 16px)}
 .anote{margin-top:30px;padding:14px;border-radius:14px;background:rgba(255,255,255,.1);white-space:pre-wrap;font-size:14px;line-height:1.5}
 .cover{display:none}
+input.bad{color:#ff3b30}
 .grpbar{display:flex;align-items:center;border-radius:999px;height:44px;padding:0 4px}
 .grpbar button{border:0;background:none;color:#fff;font-size:15px;font-weight:600;height:36px;padding:0 13px;border-radius:999px;display:flex;align-items:center;justify-content:center}
 .grpbar .sepv{width:1px;height:18px;background:rgba(255,255,255,.3)}
@@ -291,8 +292,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.12.3';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.13.0';
 var CHANGES = [
+  { v: '1.13.0', d: '25 Nov 2026', t: 'Albums, dates, link page', s: 'Songs now keep an album and a release date, and a new song starts with a page for its links.', n: ['New fields on the song form: single link, album and release date (written like 2024 Apr 17; a date that is not real is not accepted)', 'The reader cover shows the album and release date under the artist', 'Adding a song now opens a links page first: the album-version Spotify link, an optional single link and an optional UtaTime link. The title and cover are read from Spotify, and the artist, album and date are matched in Apple Music', 'The album, release date and single link now stay on the song when it syncs'] },
   { v: '1.12.3', d: '22 Nov 2026', t: 'Updates reach the app', s: 'The Home Screen app now checks for new versions by itself and reloads when it is safe.', n: ['The app asks for the newest files every time instead of using a 10 minute old copy', 'It checks for an update when you come back to it, and reloads on its own unless you are editing a song or typing'] },
   { v: '1.12.2', d: '22 Nov 2026', t: 'Romaji splits for kanji words', s: 'A space in the romaji line now also splits words that contain kanji, like fushigi na and ano ko.', n: ['The romaji split works on words with kanji too, when the cut falls at a kanji or kana edge (for example 不思議 | な and あの | 子)', 'Load all words reads those split parts as well'] },
   { v: '1.12.1', d: '22 Nov 2026', t: 'Offline covers fix', s: 'Covers now show offline, and Load all words also saves split words and says exactly what it did.', n: ['Album covers are saved on this device the first time they load, so they show offline', 'Load all words also reads the parts created by spaces in your romaji line', 'The Done message now tells you how many different lines were read, how many repeated lines were skipped, the split words, and the kanji in the song'] },
@@ -330,6 +332,7 @@ var CHANGES = [
 ];
 var db = null, status = '';
 var tab = 'songs', stacks = { songs: [{ p: 'list' }], add: [{ p: 'form' }] };
+var linkStage = true, lk = { album: '', single: '', uta: '' }, lkMsg = '', lkBusy = false, lkData = null, lkTok = 0;
 var draft = null, sheetKind = 'discard', sheetArg = '', covers = [], coverMsg = '', menuOpen = null, vmenu = false, sheet = false, query = '', curLine = 0;
 var pushing = false, freshScroll = true, an = { v: 0, m: 0, s: 0 };
 var KS = [0.85, 1, 1.15, 1.3], KN = ['Small', 'Default', 'Large', 'Extra large'], KL = ['S', 'M', 'L', 'XL'];
@@ -337,8 +340,21 @@ var app = document.getElementById('app');
 
 function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 function uid() { return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function dateShow(t) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(t || ''); return m && +m[2] >= 1 && +m[2] <= 12 ? m[1] + ' ' + MON[+m[2] - 1] + ' ' + m[3] : (t || ''); }
+function dateParse(t) {
+  /* '' for empty, null when it is not a real date, otherwise 2024-04-17 */
+  t = String(t || '').replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  var m = /^(\d{4}) ([A-Za-z]{3})[A-Za-z]* (\d{1,2})$/.exec(t), y, mo, d, dt;
+  if (m) { mo = MON.map(function (x) { return x.toLowerCase(); }).indexOf(m[2].toLowerCase()); if (mo < 0) return null; y = +m[1]; d = +m[3]; }
+  else { m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t); if (!m) return null; y = +m[1]; mo = +m[2] - 1; d = +m[3]; }
+  dt = new Date(Date.UTC(y, mo, d));
+  if (y < 1900 || dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo || dt.getUTCDate() !== d) return null;
+  return y + '-' + ('0' + (mo + 1)).slice(-2) + '-' + ('0' + d).slice(-2);
+}
 function blankLine() { return { ro: '', jp: '', en: '', note: '' }; }
-function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', link: '', notes: '', lines: [] }); }
+function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', album: '', released: '', singleLink: '', link: '', notes: '', lines: [] }); }
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
   d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.myLow = +d.ui.myLow || 0; d.ui.myHigh = +d.ui.myHigh || 0; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light'; d.ui.wp = d.ui.wp === true; d.ui.wk = d.ui.wk !== false;
@@ -351,7 +367,7 @@ function norm(d) {
 }
 function normSong(s) {
   s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
-  s.artist = s.artist || ''; s.artistRo = s.artistRo || ''; s.link = s.link || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
+  s.artist = s.artist || ''; s.artistRo = s.artistRo || ''; s.album = s.album || ''; s.released = s.released || ''; s.singleLink = s.singleLink || ''; s.link = s.link || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
   s.lines.forEach(function (l) { l.ro = l.ro || ''; l.jp = l.jp || ''; l.en = l.en || ''; l.note = l.note || ''; });
   s.paste = s.paste || {}; s.paste.jp = s.paste.jp || ''; s.paste.ro = s.paste.ro || ''; s.paste.en = s.paste.en || '';
   s.cover = s.cover || ''; s.src = s.src || {}; s.src.jp = s.src.jp || ''; s.src.ro = s.src.ro || ''; s.src.en = s.src.en || '';
@@ -530,7 +546,7 @@ function api(method, path, body) {
     return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { status: r.status, json: j }; });
   });
 }
-function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, link: s.link, kpc: s.kpc, kmin: s.kmin, kshift: s.kshift, lo: s.lo, hi: s.hi, bpm: s.bpm, pitch: s.pitch, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
+function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, album: s.album, released: s.released, singleLink: s.singleLink, link: s.link, kpc: s.kpc, kmin: s.kmin, kshift: s.kshift, lo: s.lo, hi: s.hi, bpm: s.bpm, pitch: s.pitch, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
 function findSong(id) { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === id) return i; return -1; }
 function fetchSong(id) {
   return api('GET', '/contents/songs/' + id + '.json').then(function (r) {
@@ -1150,7 +1166,7 @@ function readerP(p) {
     '<i class="blob" style="width:520px;height:520px;color:hsl(' + h1 + ',85%,58%);left:-160px;top:-120px"></i>' +
     '<i class="blob" style="width:600px;height:600px;color:hsl(' + h2 + ',75%,55%);right:-200px;bottom:-160px"></i>' +
     navBar(backBtn(), esc(name), '<button class="pill round glass" data-act="edit" data-id="' + s.id + '" aria-label="Edit">' + PEN + '</button>') +
-    '<div class="cover' + (hasKey(s) ? ' ki' : '') + '">' + covH(s, true) + '<div class="ct">' + esc(name) + '</div><div class="ca">' + esc(s.artist) + (s.artist && s.artistRo ? ' · ' : '') + esc(s.artistRo) + '</div>' + (hasKey(s) ? '<div class="kinfo">' + keyTableHTML(s, true) + '</div>' : '') + '</div><div class="ly" id="sc">';
+    '<div class="cover' + (hasKey(s) ? ' ki' : '') + '">' + covH(s, true) + '<div class="ct">' + esc(name) + '</div><div class="ca">' + esc(s.artist) + (s.artist && s.artistRo ? ' · ' : '') + esc(s.artistRo) + '</div>' + (s.album || s.released ? '<div class="ca">' + esc(s.album) + (s.album && s.released ? ' · ' : '') + esc(dateShow(s.released)) + '</div>' : '') + (hasKey(s) ? '<div class="kinfo">' + keyTableHTML(s, true) + '</div>' : '') + '</div><div class="ly" id="sc">';
   s.lines.forEach(function (l, i) {
     h += '<div class="al' + (i === curLine ? ' act' : '') + '" data-act="line" data-i="' + i + '">' +
       (l.ro ? '<span class="ro' + (hide.ro ? ' hid' : '') + '">' + esc(l.ro) + '</span>' : '') +
@@ -1222,15 +1238,19 @@ function alignH(s) {
 function formP() {
   var nw = cp().p === 'form', s = fs();
   if (!s) return '';
+  if (nw && linkStage && !draftDirty()) return linksP();
   var dis = (nw && !s.title.jp.trim() && !s.title.en.trim()) ? ' dis' : '';
   var save = nw ? '<button class="pill pri' + dis + '" data-act="save" id="savebtn">Save</button>' : '<button class="pill round pri" data-act="save" id="savebtn" aria-label="Done">' + CHECK + '</button>';
   var h = navBar(nw ? '<button class="pill glass" data-act="cancel">Cancel</button>' : backBtn(), nw ? 'New song' : 'Edit song', save) + '<div class="body fbody"><div class="fcol"><div class="sec">Details</div><div class="grp">' +
     '<div class="fld"><label>Song link · Spotify or UtaTime (one link for this song)</label><span class="fw' + (s.link ? ' has' : '') + '"><input data-f="link" value="' + esc(s.link) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
+    '<div class="fld"><label>Single link · Spotify (used for the cover)</label><span class="fw' + (s.singleLink ? ' has' : '') + '"><input data-f="singleLink" value="' + esc(s.singleLink) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
     '<div class="fld"><label>Title (Japanese)</label><input data-f="title.jp" value="' + esc(s.title.jp) + '" placeholder="Required"></div>' +
     '<div class="fld"><label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '"></div>' +
     '<div class="fld"><label>Title (English)</label><input data-f="title.en" value="' + esc(s.title.en) + '"></div>' +
     '<div class="fld"><label>Artist (kanji)</label><input data-f="artist" value="' + esc(s.artist) + '"></div>' +
     '<div class="fld"><label>Artist (romaji)</label><input data-f="artistRo" value="' + esc(s.artistRo) + '"></div>' +
+    '<div class="fld"><label>Album</label><input data-f="album" value="' + esc(s.album) + '"></div>' +
+    '<div class="fld"><label>Release date · like 2024 Apr 17</label><input data-d="released" value="' + esc(dateShow(s.released)) + '" placeholder="YYYY Mmm DD" autocapitalize="none" autocorrect="off"></div>' +
     '<div class="fld"><label>Notes (shown at the end of the song)</label><textarea data-f="notes" style="min-height:60px">' + esc(s.notes) + '</textarea></div></div>';
   h += '<div class="sec">Key &amp; range</div><div class="grp">' +
     '<div class="fld"><label>Original key</label><div class="krow"><select data-n="kpc"><option value="-1">\u2013</option>' + KEYMAJ.map(function (nm, i) { return '<option value="' + i + '"' + (s.kpc === i ? ' selected' : '') + '>' + (s.kmin ? KEYMIN[i] : nm) + '</option>'; }).join('') + '</select><div class="seg solo"><button data-act="kmin" data-k="0" class="' + (!s.kmin ? 'on' : '') + '">Major</button><button data-act="kmin" data-k="1" class="' + (s.kmin ? 'on' : '') + '">Minor</button></div></div></div>' +
@@ -1469,7 +1489,7 @@ function download(name, text) {
   setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 }
 function findCovers(s) {
-  var link = s.link || '', jobs = [], extra = [];
+  var link = s.singleLink || s.link || '', jobs = [], extra = [];
   if (/open\.spotify\.com\//.test(link)) {
     jobs.push(fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(link.trim())).then(function (r) { return r.json(); }).then(function (j) {
       if (j && j.title && !s.title.jp && !s.title.en) { s.title.jp = j.title; touch(s); }
@@ -1492,8 +1512,71 @@ function findCovers(s) {
     });
   }).catch(function () { coverMsg = 'Could not reach the cover catalogue. Check your connection.'; render(true); });
 }
-function resetDraft() { draft = blank(); covers = []; coverMsg = ''; sheet = false; menuOpen = null; }
-function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.link || s.kpc >= 0 || s.lo || s.hi || s.bpm || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
+function resetDraft() { draft = blank(); covers = []; coverMsg = ''; sheet = false; menuOpen = null; linkStage = true; lk = { album: '', single: '', uta: '' }; lkMsg = ''; lkBusy = false; lkData = null; lkTok++; }
+function linksP() {
+  var XC = '<svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  function fld(k, lab, ph) { return '<div class="fld"><label>' + lab + '</label><span class="fw' + (lk[k] ? ' has' : '') + '"><input data-lk="' + k + '" value="' + esc(lk[k]) + '" placeholder="' + ph + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1">' + XC + '</button></span></div>'; }
+  var h = navBar('<button class="pill glass" data-act="cancel">Cancel</button>', 'New song', '<span></span>') + '<div class="body fbody"><div class="fcol"><div class="sec">Links</div><div class="grp">' +
+    fld('album', 'Spotify link · album version', 'https://open.spotify.com/track/\u2026') +
+    fld('single', 'Spotify link · single (optional)', 'https://open.spotify.com/track/\u2026') +
+    fld('uta', 'UtaTime link (optional, kept as the lyrics source)', 'https://www.utatime.com/\u2026') + '</div>' +
+    '<div class="sheetnote">The title comes from the album link and the cover from the single link (or the album link if there is no single). The artist, album and release date are matched in Apple Music, so check them.</div>';
+  if (lkMsg) h += '<div class="sheetnote">' + esc(lkMsg) + '</div>';
+  if (lkData && lkData.picks) {
+    h += '<div class="sec">Which one is it?</div><div class="grp">' + lkData.picks.map(function (p, i) { return '<div class="row" data-act="lkpick" data-i="' + i + '"><div class="sp"><b>' + esc(p.artist) + '</b><small>' + esc((p.album || 'No album found') + (p.date ? ' \u00b7 ' + dateShow(p.date) : '')) + '</small></div></div>'; }).join('') +
+      '<div class="row" data-act="lkpick" data-i="-1"><div class="sp"><b>None of these</b><small>Fill the rest in myself</small></div></div></div>';
+  } else h += '<div class="btnrow"><button class="sbtn pri' + (lkBusy ? ' dis' : '') + '" data-act="lkgo">Get details</button><button class="sbtn" data-act="lkskip">Skip, type it myself</button></div>';
+  return h + '</div></div>';
+}
+function lkFinish(pick) {
+  var d = draft, x = lkData || {};
+  if (!d) return;
+  if (x.title) { if (/[\u3040-\u30ff\u3400-\u9fff]/.test(x.title)) d.title.jp = x.title; else d.title.en = x.title; }
+  if (x.cover) d.cover = x.cover;
+  if (x.link) d.link = x.link;
+  d.singleLink = x.single || '';
+  if (x.uta) d.src = { jp: x.uta, ro: x.uta, en: x.uta };
+  if (pick) {
+    if (/[\u3040-\u30ff\u3400-\u9fff]/.test(pick.artist)) d.artist = pick.artist; else d.artistRo = pick.artist;
+    d.album = pick.album || ''; d.released = pick.date || '';
+  }
+  touch(d); lkData = null; lkBusy = false; lkMsg = ''; linkStage = false; render(true);
+}
+function lkGo() {
+  if (lkBusy) return;
+  var a = lk.album.trim(), sg = lk.single.trim(), ut = lk.uta.trim(), base = a || sg, tok = ++lkTok;
+  if (!base) { lkData = { uta: ut }; lkFinish(null); return; }
+  if (!/open\.spotify\.com\/(intl-[a-z]+\/)?track\//.test(base) || (sg && !/open\.spotify\.com\/(intl-[a-z]+\/)?track\//.test(sg))) { lkMsg = 'Paste Spotify track links (open.spotify.com/track/\u2026).'; render(true); return; }
+  lkBusy = true; lkMsg = 'Looking it up\u2026'; render(true);
+  function oe(u) { return fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(u.split('?')[0])).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
+  Promise.all([oe(base), sg && sg !== base ? oe(sg) : null]).then(function (r) {
+    if (tok !== lkTok) return;
+    var b = r[0], g = r[1] || r[0], title = String(b.title || '').trim();
+    lkData = { title: title, cover: g.thumbnail_url || b.thumbnail_url || '', link: base, single: sg, uta: ut, picks: null };
+    return fetch('https://itunes.apple.com/search?entity=song&limit=20&country=jp&term=' + encodeURIComponent(title)).then(function (r2) { return r2.json(); }).then(function (j) {
+      if (tok !== lkTok) return;
+      var want = lkData.title.toLowerCase().replace(/[^a-z0-9\u3040-\u30ff\u3400-\u9fff]/g, ''), by = {}, order = [], picks;
+      (j.results || []).forEach(function (x) {
+        if (String(x.trackName || '').toLowerCase().replace(/[^a-z0-9\u3040-\u30ff\u3400-\u9fff]/g, '') !== want) return;
+        if (!by[x.artistName]) { by[x.artistName] = []; order.push(x.artistName); }
+        by[x.artistName].push(x);
+      });
+      picks = order.slice(0, 4).map(function (an) {
+        var alb = null, sgl = null;
+        by[an].forEach(function (x) {
+          if (/- Single$/.test(x.collectionName || '')) { if (!sgl || x.releaseDate < sgl.releaseDate) sgl = x; } else if (!alb) alb = x;
+        });
+        var rd = sgl || alb;
+        return { artist: an, album: alb ? alb.collectionName : '', date: rd && rd.releaseDate ? rd.releaseDate.slice(0, 10) : '' };
+      });
+      lkBusy = false;
+      if (!picks.length) { lkFinish(null); return; }
+      if (picks.length === 1) { lkFinish(picks[0]); return; }
+      lkMsg = ''; lkData.picks = picks; render(true);
+    }).catch(function () { if (tok === lkTok) lkFinish(null); });
+  }).catch(function () { if (tok !== lkTok) return; lkBusy = false; lkMsg = 'Could not read the link. Check it and your connection.'; render(true); });
+}
+function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.album || s.released || s.singleLink || s.link || s.kpc >= 0 || s.lo || s.hi || s.bpm || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
 /* ---------- events ---------- */
@@ -1632,6 +1715,9 @@ document.addEventListener('click', function (e) {
     closeAnim('.sheet,.scrim', function () { sheet = false; var ps = fs(); if (ps) { ps.paste[sheetArg] = ''; touch(ps); if (ps !== draft) save(); } render(true); });
     return;
   }
+  if (act === 'lkgo') { lkGo(); return; }
+  if (act === 'lkskip') { if (lk.uta.trim() && draft) draft.src = { jp: lk.uta.trim(), ro: lk.uta.trim(), en: lk.uta.trim() }; linkStage = false; render(true); return; }
+  if (act === 'lkpick') { lkFinish(i >= 0 && lkData && lkData.picks ? lkData.picks[i] : null); return; }
   if (act === 'covers') { if (s) findCovers(s); return; }
   if (act === 'cover') { if (s && covers[i]) { s.cover = covers[i].u; touch(s); if (s !== draft) save(); render(true); } return; }
   if (act === 'nocover') { if (s) { s.cover = ''; touch(s); if (s !== draft) save(); render(true); } return; }
@@ -1726,6 +1812,7 @@ document.addEventListener('input', function (e) {
   if (t.id === 'q') { query = t.value; var pos = t.selectionStart; render(true); var q2 = document.getElementById('q'); if (q2) { q2.focus(); try { q2.setSelectionRange(pos, pos); } catch (x) {} } return; }
   if (t.hasAttribute('data-u')) { db.ui[t.getAttribute('data-u')] = parseNote(t.value); save(); return; }
   var s = fs();
+  if (t.hasAttribute('data-lk')) { lk[t.getAttribute('data-lk')] = t.value; return; }
   if (t.hasAttribute('data-n')) {
     var ns = fs(), nk = t.getAttribute('data-n');
     if (ns) { ns[nk] = nk === 'kpc' ? (parseInt(t.value, 10) >= 0 ? parseInt(t.value, 10) : -1) : nk === 'bpm' ? (parseInt(t.value, 10) || 0) : parseNote(t.value); touch(ns); if (ns !== draft) save(); }
@@ -1733,6 +1820,11 @@ document.addEventListener('input', function (e) {
   }
   if (t.hasAttribute('data-p')) { var ps = fs(); if (ps) { ps.paste[t.getAttribute('data-p')] = t.value; touch(ps); if (ps !== draft) save(); } return; }
   if (!s) return;
+  if (t.hasAttribute('data-d')) {
+    var dv = dateParse(t.value);
+    if (dv === null) { t.classList.add('bad'); } else { t.classList.remove('bad'); s.released = dv; touch(s); if (s !== draft) save(); }
+    return;
+  }
   if (t.hasAttribute('data-f')) {
     setPath(s, t.getAttribute('data-f'), t.value); touch(s); if (s !== draft) save();
     var b = document.getElementById('savebtn'); if (b && cp().p === 'form') b.classList.toggle('dis', !s.title.jp.trim() && !s.title.en.trim());
@@ -1741,6 +1833,11 @@ document.addEventListener('input', function (e) {
     s.lines[+t.getAttribute('data-i')][t.getAttribute('data-c')] = t.value; touch(s); if (s !== draft) save(); updateAlign();
     if (t.getAttribute('data-c') === 'note') { var nc = t.closest('.cell'); if (nc) nc.classList.toggle('empty', !t.value.trim()); }
   }
+});
+/* a release date that is not real is never kept: leaving the box puts the saved date back */
+document.addEventListener('focusout', function (e) {
+  var t = e.target;
+  if (t && t.hasAttribute && t.hasAttribute('data-d') && t.classList.contains('bad')) { var cs = fs(); t.value = cs ? dateShow(cs.released) : ''; t.classList.remove('bad'); }
 });
 /* Pull physics.
    Pages that scroll use the phone's own momentum and bounce (so a fling that reaches the end recoils).
