@@ -59,6 +59,11 @@ h1.lg{font-size:34px;font-weight:700;letter-spacing:-.4px;margin:4px 0 12px}
 .dot{width:10px;height:10px;border-radius:50%;background:#30d158;flex:none;display:block}.dot.o{background:#ff9f0a}
 .cov{position:relative;overflow:hidden;width:44px;height:44px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;font-style:normal}
 .cov img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cov.flip{overflow:visible;perspective:900px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cov.flip .fin{position:absolute;inset:0;border-radius:inherit;transform-style:preserve-3d;transition:transform .6s cubic-bezier(.32,.72,0,1);font-weight:inherit}
+.cov.flip.on .fin{transform:rotateY(180deg)}
+.cov.flip .fc{position:absolute;inset:0;border-radius:inherit;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;align-items:center;justify-content:center;font-style:normal}
+.cov.flip .bk{transform:rotateY(180deg)}
 .sec{font-size:13px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em;margin:18px 14px 6px}
 .fld{padding:10px 14px;border-bottom:1px solid var(--line)}
 .fld:last-child{border-bottom:0}
@@ -292,8 +297,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.14.2';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.15.0';
 var CHANGES = [
+  { v: '1.15.0', d: '27 Nov 2026', t: 'Flip the cover', s: 'A song with both a single cover and an album cover flips between them when you tap the cover.', n: ['On the iPad in landscape, tap the cover in the reader to flip between the single artwork and the album artwork', 'Songs now keep a second cover (the album art) next to the single cover, and it syncs', 'A song with only one cover does not flip'] },
   { v: '1.14.2', d: '26 Nov 2026', t: 'Updates on resume', s: 'The app checks for a new version in more situations when you come back to it.', n: ['The update check also runs when the app is shown again or regains focus, not only when it becomes visible'] },
   { v: '1.14.1', d: '26 Nov 2026', t: 'Panel over the word bubble', s: 'The song panel now slides over an open word bubble instead of the bubble floating on top of it.', n: ['The word bubble sits under the song panel'] },
   { v: '1.14.0', d: '26 Nov 2026', t: 'Paste a UtaTime block', s: 'One paste fills the Japanese, romaji and English boxes.', n: ['New card above the lyric boxes: paste the three-language block from the UtaTime page (the global one) and the three boxes fill in at once', 'UtaTime source links are changed to the global page automatically', 'Then press Apply pasted lyrics to lines as before'] },
@@ -374,7 +380,7 @@ function normSong(s) {
   s.artist = s.artist || ''; s.artistRo = s.artistRo || ''; s.album = s.album || ''; s.released = s.released || ''; s.singleLink = s.singleLink || ''; s.link = s.link || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
   s.lines.forEach(function (l) { l.ro = l.ro || ''; l.jp = l.jp || ''; l.en = l.en || ''; l.note = l.note || ''; });
   s.paste = s.paste || {}; s.paste.jp = s.paste.jp || ''; s.paste.ro = s.paste.ro || ''; s.paste.en = s.paste.en || '';
-  s.cover = s.cover || ''; s.src = s.src || {}; s.src.jp = s.src.jp || ''; s.src.ro = s.src.ro || ''; s.src.en = s.src.en || '';
+  s.cover = s.cover || ''; s.albumCover = s.albumCover || ''; s.src = s.src || {}; s.src.jp = s.src.jp || ''; s.src.ro = s.src.ro || ''; s.src.en = s.src.en || '';
   s.kpc = (typeof s.kpc === 'number' && s.kpc >= 0 && s.kpc < 12) ? Math.floor(s.kpc) : -1; s.kmin = !!s.kmin; s.kshift = Math.max(-12, Math.min(12, Math.round(+s.kshift || 0)));
   s.lo = +s.lo || 0; s.hi = +s.hi || 0; s.bpm = +s.bpm || 0; s.pitch = (s.pitch && s.pitch.length) ? s.pitch : [];
   s.sha = s.sha || ''; s.dirty = !!s.dirty; s.updated = +s.updated || 0;
@@ -416,7 +422,7 @@ function idbPut(str) {
 }
 function setStatus(m) { status = m; var el = document.getElementById('status'); if (el) { el.textContent = m; el.style.display = m ? 'block' : 'none'; } }
 /* ---------- covers kept on the device ---------- */
-var covData = {}, covBusy = {}, covFail = {};
+var covData = {}, covBusy = {}, covFail = {}, flipOn = {};
 function covWarm(cb) {
   if (!idb) { cb(); return; }
   try {
@@ -452,7 +458,7 @@ function covEnsure(url) {
     }).catch(function () { delete covBusy[url]; covFail[url] = 1; });
   } catch (e) { delete covBusy[url]; covFail[url] = 1; }
 }
-function covSweep() { if (db) db.songs.forEach(function (sg) { if (sg.cover) covEnsure(sg.cover); }); }
+function covSweep() { if (db) db.songs.forEach(function (sg) { if (sg.cover) covEnsure(sg.cover); if (sg.albumCover) covEnsure(sg.albumCover); }); }
 window.addEventListener('online', function () { covFail = {}; covSweep(); });
 var lsOk = true;
 function save() {
@@ -550,7 +556,7 @@ function api(method, path, body) {
     return r.text().then(function (t) { var j = null; try { j = JSON.parse(t); } catch (e) {} return { status: r.status, json: j }; });
   });
 }
-function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, album: s.album, released: s.released, singleLink: s.singleLink, link: s.link, kpc: s.kpc, kmin: s.kmin, kshift: s.kshift, lo: s.lo, hi: s.hi, bpm: s.bpm, pitch: s.pitch, notes: s.notes, lines: s.lines, cover: s.cover, src: s.src, paste: s.paste, updated: s.updated }; }
+function pack(s) { return { id: s.id, title: s.title, artist: s.artist, artistRo: s.artistRo, album: s.album, released: s.released, singleLink: s.singleLink, link: s.link, kpc: s.kpc, kmin: s.kmin, kshift: s.kshift, lo: s.lo, hi: s.hi, bpm: s.bpm, pitch: s.pitch, notes: s.notes, lines: s.lines, cover: s.cover, albumCover: s.albumCover, src: s.src, paste: s.paste, updated: s.updated }; }
 function findSong(id) { for (var i = 0; i < db.songs.length; i++) if (db.songs[i].id === id) return i; return -1; }
 function fetchSong(id) {
   return api('GET', '/contents/songs/' + id + '.json').then(function (r) {
@@ -1120,7 +1126,12 @@ function wordsP() {
   });
   return h + '</div></div>';
 }
+function covImg(u) { return u ? '<img src="' + esc(covData[u] || u) + '" data-cu="' + esc(u) + '" alt="" onerror="this.remove()">' : ''; }
 function covH(s, big) {
+  if (big && s.cover && s.albumCover && s.albumCover !== s.cover) {
+    var gr = 'background:' + grad(hue(s));
+    return '<i class="cov art flip' + (flipOn[s.id] ? ' on' : '') + '" data-act="flip" role="button" aria-label="Flip between the single and the album cover"><b class="fin"><i class="fc" style="' + gr + '">' + covImg(s.cover) + '歌</i><i class="fc bk" style="' + gr + '">' + covImg(s.albumCover) + '歌</i></b></i>';
+  }
   return '<i class="cov' + (big ? ' art' : '') + '" style="background:' + grad(hue(s)) + '">' + (s.cover ? '<img src="' + esc(covData[s.cover] || s.cover) + '" data-cu="' + esc(s.cover) + '" alt="" onerror="this.remove()">' : '') + '歌</i>';
 }
 function nonBlank(s, k) { var n = 0; s.lines.forEach(function (l) { if (String(l[k]).replace(/\s/g, '')) n++; }); return n; }
@@ -1663,6 +1674,7 @@ document.addEventListener('click', function (e) {
   var t = e.target.closest ? e.target.closest('[data-act]') : null;
   if (!t || !db) return;
   var act = t.getAttribute('data-act'), i = +t.getAttribute('data-i'), k = t.getAttribute('data-k'), id = t.getAttribute('data-id'), s;
+  if (act === 'flip') { var fsg = song(); t.classList.toggle('on'); if (fsg) flipOn[fsg.id] = t.classList.contains('on'); return; }
   if (act === 'xclear') {
     var w = t.closest('.fw'), inp = w && w.querySelector('input,textarea');
     if (inp) { inp.value = ''; inp.dispatchEvent(new Event('input', { bubbles: true })); w.classList.remove('has'); try { inp.focus(); } catch (x) {} }
