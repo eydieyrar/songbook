@@ -297,8 +297,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.15.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.16.0';
 var CHANGES = [
+  { v: '1.16.0', d: '27 Nov 2026', t: 'Titles in Japanese and romaji', s: 'A song title is now only Japanese and romaji; there is no English title.', n: ['The English title field is gone. A title you had written in English moves into the romaji title', 'Artist names are kept in Japanese and romaji, family name first (Yonezu Kenshi)'] },
   { v: '1.15.0', d: '27 Nov 2026', t: 'Flip the cover', s: 'A song with both a single cover and an album cover flips between them when you tap the cover.', n: ['On the iPad in landscape, tap the cover in the reader to flip between the single artwork and the album artwork', 'Songs now keep a second cover (the album art) next to the single cover, and it syncs', 'A song with only one cover does not flip'] },
   { v: '1.14.2', d: '26 Nov 2026', t: 'Updates on resume', s: 'The app checks for a new version in more situations when you come back to it.', n: ['The update check also runs when the app is shown again or regains focus, not only when it becomes visible'] },
   { v: '1.14.1', d: '26 Nov 2026', t: 'Panel over the word bubble', s: 'The song panel now slides over an open word bubble instead of the bubble floating on top of it.', n: ['The word bubble sits under the song panel'] },
@@ -364,7 +365,7 @@ function dateParse(t) {
   return y + '-' + ('0' + (mo + 1)).slice(-2) + '-' + ('0' + d).slice(-2);
 }
 function blankLine() { return { ro: '', jp: '', en: '', note: '' }; }
-function blank() { return normSong({ id: uid(), title: { jp: '', ro: '', en: '' }, artist: '', artistRo: '', album: '', released: '', singleLink: '', link: '', notes: '', lines: [] }); }
+function blank() { return normSong({ id: uid(), title: { jp: '', ro: '' }, artist: '', artistRo: '', album: '', released: '', singleLink: '', link: '', notes: '', lines: [] }); }
 function norm(d) {
   if (!d || !Array.isArray(d.songs)) return null;
   d.ui = d.ui || {}; d.ui.hide = d.ui.hide || {}; d.ui.hide.jp = false; d.ui.myLow = +d.ui.myLow || 0; d.ui.myHigh = +d.ui.myHigh || 0; d.ui.rs = d.ui.rs === 'glow' ? 'glow' : 'blur'; d.ui.rl = d.ui.rl === 'strong' ? 'strong' : 'light'; d.ui.wp = d.ui.wp === true; d.ui.wk = d.ui.wk !== false;
@@ -376,7 +377,7 @@ function norm(d) {
   return d;
 }
 function normSong(s) {
-  s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || ''; s.title.en = s.title.en || '';
+  s.title = s.title || {}; s.title.jp = s.title.jp || ''; s.title.ro = s.title.ro || s.title['en'] || ''; delete s.title['en'];
   s.artist = s.artist || ''; s.artistRo = s.artistRo || ''; s.album = s.album || ''; s.released = s.released || ''; s.singleLink = s.singleLink || ''; s.link = s.link || ''; s.notes = s.notes || ''; s.lines = s.lines || [];
   s.lines.forEach(function (l) { l.ro = l.ro || ''; l.jp = l.jp || ''; l.en = l.en || ''; l.note = l.note || ''; });
   s.paste = s.paste || {}; s.paste.jp = s.paste.jp || ''; s.paste.ro = s.paste.ro || ''; s.paste.en = s.paste.en || '';
@@ -566,7 +567,7 @@ function fetchSong(id) {
   });
 }
 function putSong(s, sha) {
-  var u = s.updated, body = { message: 'Update ' + (s.title.en || s.title.jp || s.id), content: enc(JSON.stringify(pack(s), null, 1)) };
+  var u = s.updated, body = { message: 'Update ' + (s.title.ro || s.title.jp || s.id), content: enc(JSON.stringify(pack(s), null, 1)) };
   if (sha) body.sha = sha;
   return api('PUT', '/contents/songs/' + s.id + '.json', body).then(function (r) {
     if (r.status === 200 || r.status === 201) { s.sha = r.json.content.sha; s.dirty = (s.updated !== u); return 'ok'; }
@@ -658,7 +659,7 @@ function cp() { var s = stk(); return s[s.length - 1]; }
 function song() { var i = findSong(cp().id); return i < 0 ? null : db.songs[i]; }
 function fs() { return cp().p === 'form' ? draft : song(); }
 function hue(s) {
-  var t = s.title.jp || s.title.en || s.id, h = 0, i;
+  var t = s.title.jp || s.title.ro || s.id, h = 0, i;
   for (i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) % 360;
   return h;
 }
@@ -1150,8 +1151,8 @@ function pmode() { return ipadMode() && stk().length >= 2 && stk()[1].p === 'rea
 function backBtn() { if (renderIdx === 1 && pmode()) return '<button class="pill round glass" data-act="panel" aria-label="Songs list">' + MENU + '</button>'; return '<button class="pill round glass" data-act="back" aria-label="Back">' + BACK + '</button>'; }
 function navBar(l, mid, r) { return '<div class="nav">' + l + '<div class="navt">' + (mid || '') + '</div>' + r + '</div>'; }
 function searchLinks(s, k) {
-  var q = encodeURIComponent((s.title.jp || s.title.en) + ' ' + (s.artist || s.artistRo) + (k === 'jp' ? ' 歌詞' : k === 'ro' ? ' romaji lyrics' : ' lyrics english translation'));
-  var t = encodeURIComponent(s.title.jp || s.title.en);
+  var q = encodeURIComponent((s.title.jp || s.title.ro) + ' ' + (s.artist || s.artistRo) + (k === 'jp' ? ' 歌詞' : k === 'ro' ? ' romaji lyrics' : ' lyrics english translation'));
+  var t = encodeURIComponent(s.title.jp || s.title.ro);
   return [['Google', 'https://www.google.com/search?q=' + q], ['UtaTime', 'https://www.utatime.com/global/'], ['Genius', 'https://genius.com/search?q=' + q]];
 }
 
@@ -1160,12 +1161,12 @@ function listP() {
   var pm = pmode();
   var h = navBar(pm ? '<button class="pill round glass" data-act="home" aria-label="Home"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11 12 4l8 7v9H4z"/><path d="M10 20v-6h4v6"/></svg></button>' : '<span></span>', '', pm ? '<span></span>' : '<button class="pill round glass" data-act="gear" aria-label="Settings">' + GEAR + '</button>') +
     '<div class="body"><h1 class="lg">Songs</h1><label class="srch glass"><span style="color:var(--mu);font-size:18px">⌕</span><span class="fw' + (query ? ' has' : '') + '"><input id="q" placeholder="Search songs" value="' + esc(query) + '" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></label>';
-  var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.en + ' ' + s.title.ro + ' ' + s.artist + ' ' + s.artistRo).toLowerCase().indexOf(q) >= 0; });
+  var q = query.toLowerCase(), shown = db.songs.filter(function (s) { return !q || (s.title.jp + ' ' + s.title.ro + ' ' + s.artist + ' ' + s.artistRo).toLowerCase().indexOf(q) >= 0; });
   if (!db.songs.length) h += '<div class="grp"><div class="empty">' + (cfg ? 'No songs yet. Pull down to sync, or tap Add to create one.' : 'No songs yet. Turn on Sync in Settings (the gear) to bring your songs here, or tap Add to create one.') + '</div></div>';
   else {
     h += '<div class="grp">';
     shown.forEach(function (s) {
-      h += '<div class="row' + (pmode() && stk()[1].id === s.id ? ' sel' : '') + '" data-act="open" data-id="' + s.id + '">' + covH(s) + '<div class="sp"><b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><small>' + esc(s.artist || s.artistRo) + ' · ' + s.lines.length + (s.lines.length === 1 ? ' line' : ' lines') + '</small></div>' +
+      h += '<div class="row' + (pmode() && stk()[1].id === s.id ? ' sel' : '') + '" data-act="open" data-id="' + s.id + '">' + covH(s) + '<div class="sp"><b>' + esc(s.title.jp || s.title.ro || '(untitled)') + '</b><small>' + esc(s.artist || s.artistRo) + ' · ' + s.lines.length + (s.lines.length === 1 ? ' line' : ' lines') + '</small></div>' +
         '<span class="rt">' + (conf[s.id] ? '<button class="sbtn red" data-act="conflict" data-id="' + s.id + '">Choose version</button>' : (cfg ? '<span class="dot' + (s.dirty ? ' o' : '') + '"></span>' : '')) + CHEV + '</span></div>';
     });
     if (!shown.length) h += '<div class="empty">No songs match.</div>';
@@ -1175,7 +1176,7 @@ function listP() {
 }
 function readerP(p) {
   var i0 = p && p.id ? findSong(p.id) : -1, s = i0 < 0 ? song() : db.songs[i0]; if (!s) return '';
-  var h1 = hue(s), h2 = (h1 + 140) % 360, name = s.title.jp || s.title.en || '(untitled)', hide = db.ui.hide;
+  var h1 = hue(s), h2 = (h1 + 140) % 360, name = s.title.jp || s.title.ro || '(untitled)', hide = db.ui.hide;
   if (curLine >= s.lines.length) curLine = 0;
   var h = '<div class="rd" style="--h:' + h1 + ';--rb:hsl(' + h1 + ',45%,9%);--k:' + KS[db.ui.sz] + '">' +
     '<i class="blob" style="width:520px;height:520px;color:hsl(' + h1 + ',85%,58%);left:-160px;top:-120px"></i>' +
@@ -1254,14 +1255,13 @@ function formP() {
   var nw = cp().p === 'form', s = fs();
   if (!s) return '';
   if (nw && linkStage && !draftDirty()) return linksP();
-  var dis = (nw && !s.title.jp.trim() && !s.title.en.trim()) ? ' dis' : '';
+  var dis = (nw && !s.title.jp.trim() && !s.title.ro.trim()) ? ' dis' : '';
   var save = nw ? '<button class="pill pri' + dis + '" data-act="save" id="savebtn">Save</button>' : '<button class="pill round pri" data-act="save" id="savebtn" aria-label="Done">' + CHECK + '</button>';
   var h = navBar(nw ? '<button class="pill glass" data-act="cancel">Cancel</button>' : backBtn(), nw ? 'New song' : 'Edit song', save) + '<div class="body fbody"><div class="fcol"><div class="sec">Details</div><div class="grp">' +
     '<div class="fld"><label>Song link · Spotify or UtaTime (one link for this song)</label><span class="fw' + (s.link ? ' has' : '') + '"><input data-f="link" value="' + esc(s.link) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
     '<div class="fld"><label>Single link · Spotify (used for the cover)</label><span class="fw' + (s.singleLink ? ' has' : '') + '"><input data-f="singleLink" value="' + esc(s.singleLink) + '" placeholder="https://open.spotify.com/track/…" autocapitalize="none" autocorrect="off"><button class="xc" data-act="xclear" aria-label="Clear" tabindex="-1"><svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button></span></div>' +
     '<div class="fld"><label>Title (Japanese)</label><input data-f="title.jp" value="' + esc(s.title.jp) + '" placeholder="Required"></div>' +
     '<div class="fld"><label>Title (romaji)</label><input data-f="title.ro" value="' + esc(s.title.ro) + '"></div>' +
-    '<div class="fld"><label>Title (English)</label><input data-f="title.en" value="' + esc(s.title.en) + '"></div>' +
     '<div class="fld"><label>Artist (kanji)</label><input data-f="artist" value="' + esc(s.artist) + '"></div>' +
     '<div class="fld"><label>Artist (romaji)</label><input data-f="artistRo" value="' + esc(s.artistRo) + '"></div>' +
     '<div class="fld"><label>Album</label><input data-f="album" value="' + esc(s.album) + '"></div>' +
@@ -1323,7 +1323,7 @@ function backupP() {
     '<div class="btnrow"><button class="sbtn pri" data-act="copy">Copy</button><button class="sbtn" data-act="dl">Download</button><button class="sbtn red" data-act="restore">Restore from text</button></div></div>' +
     '<div class="note">Copy this text and keep it somewhere safe. Restore replaces everything.</div></div>';
 }
-function songInfo(s) { return '<b>' + esc(s.title.jp || s.title.en || '(untitled)') + '</b><br><small>' + s.lines.length + ' lines' + (s.updated ? ' · edited ' + new Date(s.updated).toLocaleString() : '') + '</small>'; }
+function songInfo(s) { return '<b>' + esc(s.title.jp || s.title.ro || '(untitled)') + '</b><br><small>' + s.lines.length + ' lines' + (s.updated ? ' · edited ' + new Date(s.updated).toLocaleString() : '') + '</small>'; }
 function conflictP() {
   var s = song(), t = s && conf[s.id];
   if (!t) return navBar(backBtn(), '', '<span></span>') + '<div class="body"><div class="empty">Nothing to resolve.</div></div>';
@@ -1518,13 +1518,13 @@ function findCovers(s) {
   var link = s.singleLink || s.link || '', jobs = [], extra = [];
   if (/open\.spotify\.com\//.test(link)) {
     jobs.push(fetch('https://open.spotify.com/oembed?url=' + encodeURIComponent(link.trim())).then(function (r) { return r.json(); }).then(function (j) {
-      if (j && j.title && !s.title.jp && !s.title.en) { s.title.jp = j.title; touch(s); }
+      if (j && j.title && !s.title.jp && !s.title.ro) { s.title.jp = j.title; touch(s); }
       if (j && j.thumbnail_url) extra.push({ u: j.thumbnail_url, l: 'Spotify' });
     }).catch(function () {}));
   }
   coverMsg = 'Searching…'; render(true);
   Promise.all(jobs).then(function () {
-    var q = ((s.title.en || s.title.jp) + ' ' + (s.artist || s.artistRo)).replace(/\s+/g, ' ').trim();
+    var q = ((s.title.ro || s.title.jp) + ' ' + (s.artist || s.artistRo)).replace(/\s+/g, ' ').trim();
     if (!q) { covers = extra; coverMsg = extra.length ? '' : 'Enter a title first.'; render(true); return; }
     return fetch('https://itunes.apple.com/search?entity=song&limit=20&country=jp&term=' + encodeURIComponent(q)).then(function (r) { return r.json(); }).then(function (j) {
       var seen = {}, out = [];
@@ -1557,7 +1557,7 @@ function linksP() {
 function lkFinish(pick) {
   var d = draft, x = lkData || {};
   if (!d) return;
-  if (x.title) { if (/[\u3040-\u30ff\u3400-\u9fff]/.test(x.title)) d.title.jp = x.title; else d.title.en = x.title; }
+  if (x.title) { if (/[\u3040-\u30ff\u3400-\u9fff]/.test(x.title)) d.title.jp = x.title; else d.title.ro = x.title; }
   if (x.cover) d.cover = x.cover;
   if (x.link) d.link = x.link;
   d.singleLink = x.single || '';
@@ -1602,7 +1602,7 @@ function lkGo() {
     }).catch(function () { if (tok === lkTok) lkFinish(null); });
   }).catch(function () { if (tok !== lkTok) return; lkBusy = false; lkMsg = 'Could not read the link. Check it and your connection.'; render(true); });
 }
-function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.en || s.artist || s.artistRo || s.album || s.released || s.singleLink || s.link || s.kpc >= 0 || s.lo || s.hi || s.bpm || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
+function draftDirty() { var s = draft; return !!(s && (s.title.jp || s.title.ro || s.title.ro || s.artist || s.artistRo || s.album || s.released || s.singleLink || s.link || s.kpc >= 0 || s.lo || s.hi || s.bpm || s.notes || s.cover || s.lines.length || s.paste.jp || s.paste.ro || s.paste.en)); }
 function updateAlign() { var el = document.getElementById('align'), s = fs(); if (el && s) el.innerHTML = alignH(s); }
 
 /* ---------- events ---------- */
@@ -1780,7 +1780,7 @@ document.addEventListener('click', function (e) {
   if (act === 'addline') { if (s) { s.lines.push(blankLine()); touch(s); if (s !== draft) save(); render(true); } return; }
   if (act === 'save') {
     if (cp().p === 'form') {
-      if (!draft.title.jp.trim() && !draft.title.en.trim()) return;
+      if (!draft.title.jp.trim() && !draft.title.ro.trim()) return;
       var n = draft; touch(n); db.songs.push(n); save(); syncSoon();
       resetDraft(); stacks.songs = [{ p: 'list' }, { p: 'read', id: n.id }]; curLine = 0; pushing = true; freshScroll = true; render();
     } else popAnim();
@@ -1822,7 +1822,7 @@ document.addEventListener('click', function (e) {
     if (act === 'keepmine') { mine.sha = th.sha; touch(mine); }
     else if (act === 'keeptheirs') { db.songs[ix] = th; }
     else {
-      var cp2 = JSON.parse(JSON.stringify(mine)); cp2.id = uid(); cp2.sha = ''; cp2.title.jp = (cp2.title.jp || cp2.title.en) + ' (mine)'; touch(cp2);
+      var cp2 = JSON.parse(JSON.stringify(mine)); cp2.id = uid(); cp2.sha = ''; cp2.title.jp = (cp2.title.jp || cp2.title.ro) + ' (mine)'; touch(cp2);
       db.songs[ix] = th; db.songs.push(cp2);
     }
     delete conf[cid]; save(); stacks.songs = [{ p: 'list' }]; freshScroll = true; render(); sync(); return;
@@ -1863,7 +1863,7 @@ document.addEventListener('input', function (e) {
   }
   if (t.hasAttribute('data-f')) {
     setPath(s, t.getAttribute('data-f'), t.value); touch(s); if (s !== draft) save();
-    var b = document.getElementById('savebtn'); if (b && cp().p === 'form') b.classList.toggle('dis', !s.title.jp.trim() && !s.title.en.trim());
+    var b = document.getElementById('savebtn'); if (b && cp().p === 'form') b.classList.toggle('dis', !s.title.jp.trim() && !s.title.ro.trim());
   } else if (t.hasAttribute('data-s')) { var gv = utaGlobal(t.value); if (gv !== t.value) t.value = gv; s.src[t.getAttribute('data-s')] = gv; touch(s); if (s !== draft) save(); }
   else if (t.hasAttribute('data-c')) {
     s.lines[+t.getAttribute('data-i')][t.getAttribute('data-c')] = t.value; touch(s); if (s !== draft) save(); updateAlign();

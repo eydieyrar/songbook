@@ -1,4 +1,4 @@
-var VERSION = '1.15.0';
+var VERSION = '1.16.0';
 var CACHE = 'songbook-' + VERSION;
 var FILES = ['./', 'index.html', 'manifest.json', 'icon.png'];
 self.addEventListener('install', function (e) {
