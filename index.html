@@ -267,10 +267,8 @@ input.bad{color:#ff3b30}
 .kt svg{display:block;margin:8px auto 4px}
 .kchg{display:grid;grid-template-columns:44px 72px 44px;justify-content:center;align-items:center;gap:10px;padding:10px 0 0}.kchg button{width:44px;height:44px;border-radius:50%;border:0;background:var(--glassb);color:var(--fg);font-size:24px;line-height:1;padding:0}.kchg b{text-align:center;font-size:22px}
 .kt.cp .kchg{grid-template-columns:36px 60px 36px;padding-top:4px}.kt.cp .kchg button{width:36px;height:36px;font-size:20px}.kt.cp .kchg b{font-size:19px}
-.tapb{border:0;border-radius:999px;background:#fa2d48;color:#fff;font-weight:700;font-size:12.5px;padding:7px 14px;grid-column:3/5;justify-self:center}
 .sheet.ksheet{display:block;padding:12px 18px 18px;background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none;color:var(--fg);max-height:90%;overflow:auto}
 .ksheet h3{margin:0 0 6px;font-size:18px}.ksheet .grab{width:38px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
-.ksheet .kt button.tapb{font-size:12.5px;padding:7px 14px;border-radius:999px;background:#fa2d48;color:#fff}
 .krow{display:flex;gap:10px;align-items:center}.krow input,.krow select{flex:1;min-width:0}.krow .seg{margin:0;flex:none;width:auto}
 .cover.ki{width:250px}.cover.ki .art{width:250px;height:250px;font-size:105px}.cover.ki .ct{margin-top:14px}
 *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -297,8 +295,9 @@ input,textarea,select{-webkit-user-select:text!important;user-select:text!import
 <script>
 (function () {
 'use strict';
-var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.16.0';
+var LSKEY = 'songbook.v1', SYNCKEY = 'songbook.sync', VER = '1.16.1';
 var CHANGES = [
+  { v: '1.16.1', d: '27 Nov 2026', t: 'Tap tempo removed', s: 'The Tap button is gone from the key sheet and the edit page.', n: ['The BPM row in the key and range sheet shows only the value, in the same place as before', 'The BPM box on the edit and new song page has no Tap button'] },
   { v: '1.16.0', d: '27 Nov 2026', t: 'Titles in Japanese and romaji', s: 'A song title is now only Japanese and romaji; there is no English title.', n: ['The English title field is gone. A title you had written in English moves into the romaji title', 'Artist names are kept in Japanese and romaji, family name first (Yonezu Kenshi)'] },
   { v: '1.15.0', d: '27 Nov 2026', t: 'Flip the cover', s: 'A song with both a single cover and an album cover flips between them when you tap the cover.', n: ['On the iPad in landscape, tap the cover in the reader to flip between the single artwork and the album artwork', 'Songs now keep a second cover (the album art) next to the single cover, and it syncs', 'A song with only one cover does not flip'] },
   { v: '1.14.2', d: '26 Nov 2026', t: 'Updates on resume', s: 'The app checks for a new version in more situations when you come back to it.', n: ['The update check also runs when the app is shown again or regains focus, not only when it becomes visible'] },
@@ -668,7 +667,6 @@ function grad(h) { return 'linear-gradient(135deg,hsl(' + h + ',80%,58%),hsl(' +
 var KEYMAJ = ['C', 'D\u266d', 'D', 'E\u266d', 'E', 'F', 'G\u266d', 'G', 'A\u266d', 'A', 'B\u266d', 'B'];
 var KEYMIN = ['C', 'C\u266f', 'D', 'E\u266d', 'E', 'F', 'F\u266f', 'G', 'G\u266f', 'A', 'B\u266d', 'B'];
 var NOTEN = ['C', 'C\u266f', 'D', 'D\u266f', 'E', 'F', 'F\u266f', 'G', 'G\u266f', 'A', 'A\u266f', 'B'];
-var tapT = [];
 function noteName(m) { return m > 0 ? NOTEN[m % 12] + (Math.floor(m / 12) - 1) : ''; }
 function parseNote(str) {
   var m = /^\s*([A-Ga-g])\s*([#\u266f\u266d]|b)?\s*(-?\d)\s*$/.exec(str || '');
@@ -739,7 +737,7 @@ function keyTableHTML(s, cp) {
   var nl = s.lo ? s.lo + sh : 0, nh = s.hi ? s.hi + sh : 0;
   var h = '<div class="kt' + (cp ? ' cp' : '') + '"><div class="kth"><span></span><span class="c">Key</span><span class="c">Low</span><span class="c">High</span></div>';
   h += '<div class="ktr"><span class="l">Original</span><b class="c">' + (s.kpc >= 0 ? keyHTML(s.kpc, s.kmin) : '\u2013') + '</b><b class="c">' + (s.lo ? noteName(s.lo) : '\u2013') + '</b><b class="c">' + (s.hi ? noteName(s.hi) : '\u2013') + '</b></div>';
-  h += '<div class="ktr"><span class="l">BPM</span><b class="c">' + (s.bpm || '\u2013') + '</b>' + (cp ? '<span></span><span></span>' : '<button class="tapb" data-act="taptempo">Tap</button>') + '</div>';
+  h += '<div class="ktr"><span class="l">BPM</span><b class="c">' + (s.bpm || '\u2013') + '</b>' + '<span></span><span></span>' + '</div>';
   h += keyGraphHTML(s, cp);
   h += '<div class="ktr" style="border:0"><span class="l">My</span><b class="c">' + (pcs >= 0 ? keyHTML(pcs, s.kmin) : '\u2013') + '</b><b class="c' + (nl && mylo && nl < mylo ? ' red' : '') + '">' + (nl ? noteName(nl) : '\u2013') + '</b><b class="c' + (nh && myhi && nh > myhi ? ' red' : '') + '">' + (nh ? noteName(nh) : '\u2013') + '</b></div>';
   h += '<div class="kchg"><button data-act="kshift" data-k="-1" aria-label="Lower the key">\u2039</button><b>' + shiftText(sh) + '</b><button data-act="kshift" data-k="1" aria-label="Raise the key">\u203a</button></div></div>';
@@ -1270,7 +1268,7 @@ function formP() {
   h += '<div class="sec">Key &amp; range</div><div class="grp">' +
     '<div class="fld"><label>Original key</label><div class="krow"><select data-n="kpc"><option value="-1">\u2013</option>' + KEYMAJ.map(function (nm, i) { return '<option value="' + i + '"' + (s.kpc === i ? ' selected' : '') + '>' + (s.kmin ? KEYMIN[i] : nm) + '</option>'; }).join('') + '</select><div class="seg solo"><button data-act="kmin" data-k="0" class="' + (!s.kmin ? 'on' : '') + '">Major</button><button data-act="kmin" data-k="1" class="' + (s.kmin ? 'on' : '') + '">Minor</button></div></div></div>' +
     '<div class="fld"><label>Lowest and highest note of the original singer</label><div class="krow"><input data-n="lo" value="' + esc(noteName(s.lo)) + '" placeholder="E3" autocapitalize="characters" autocorrect="off"><input data-n="hi" value="' + esc(noteName(s.hi)) + '" placeholder="A4" autocapitalize="characters" autocorrect="off"></div></div>' +
-    '<div class="fld"><label>BPM</label><div class="krow"><input data-n="bpm" inputmode="numeric" value="' + (s.bpm || '') + '" placeholder="92"><button class="sbtn pri" data-act="taptempo">Tap</button></div></div>' +
+    '<div class="fld"><label>BPM</label><div class="krow"><input data-n="bpm" inputmode="numeric" value="' + (s.bpm || '') + '" placeholder="92"></div></div>' +
     '<div class="fld"><label>My key, shifted from the original</label><div class="kt"><div class="kchg"><button data-act="kshift" data-k="-1" aria-label="Lower the key">\u2039</button><b>' + shiftText(s.kshift) + '</b><button data-act="kshift" data-k="1" aria-label="Raise the key">\u203a</button></div></div></div></div>';
   h += '<div class="sec">Cover</div><div class="grp"><div class="row" style="cursor:default">' + covH(s) + '<div class="sp"><b>' + (s.cover ? 'Cover chosen' : 'No cover') + '</b><small>' + esc(coverMsg || 'Find covers uses the song link, title and artist') + '</small></div></div>' +
     '<div class="btnrow"><button class="sbtn pri" data-act="covers">Find covers</button>' + (s.cover ? '<button class="xround" data-act="nocover" aria-label="Remove cover"><svg width="13" height="13" viewBox="0 0 10 10"><path d="M1.8 1.8 L8.2 8.2 M8.2 1.8 L1.8 8.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg></button>' : '') + '</div>' +
@@ -1716,17 +1714,10 @@ document.addEventListener('click', function (e) {
   if (act === 'wdel') { delete wordsLoad().s[t.getAttribute('data-w')]; wordsSave(); render(true); return; }
   if (act === 'vmenu') { setVMenu(!vmenu); return; }
   if (act === 'kopen') { sheet = true; sheetKind = 'key'; an.s = 1; render(true); return; }
-  if (act === 'kshift' || act === 'kmin' || act === 'taptempo') {
+  if (act === 'kshift' || act === 'kmin') {
     var ks = fs(); if (!ks) return;
     if (act === 'kshift') ks.kshift = Math.max(-12, Math.min(12, (ks.kshift || 0) + (+k)));
-    else if (act === 'kmin') ks.kmin = k === '1';
-    else {
-      var nowT = Date.now();
-      if (!tapT.length || nowT - tapT[tapT.length - 1] > 2500) tapT = [];
-      tapT.push(nowT); if (tapT.length > 8) tapT.shift();
-      if (tapT.length < 2) return;
-      ks.bpm = Math.round(60000 / ((tapT[tapT.length - 1] - tapT[0]) / (tapT.length - 1)));
-    }
+    else ks.kmin = k === '1';
     touch(ks); if (ks !== draft) save(); render(true); return;
   }
   if (act === 'vclose') { setVMenu(false); return; }
